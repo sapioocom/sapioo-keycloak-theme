@@ -3,10 +3,15 @@ import type { ClassKey } from "keycloakify/login";
 import type { KcContext } from "./KcContext";
 import { useI18n } from "./i18n";
 import DefaultPage from "keycloakify/login/DefaultPage";
-import Template from "keycloakify/login/Template";
+import Template from "./Template";
+import { tss } from "tss-react/mui";
+
 const UserProfileFormFields = lazy(
     () => import("keycloakify/login/UserProfileFormFields")
 );
+
+const Login = lazy(() => import("./pages/Login"));
+const LoginResetPassword = lazy(() => import("./pages/LoginResetPassword"));
 
 const doMakeUserConfirmPassword = true;
 
@@ -15,10 +20,28 @@ export default function KcPage(props: { kcContext: KcContext }) {
 
     const { i18n } = useI18n({ kcContext });
 
+    const { classes } = useStyles();
+
     return (
         <Suspense>
             {(() => {
                 switch (kcContext.pageId) {
+                    case "login.ftl":
+                        return (
+                            <Login
+                                {...{ kcContext, i18n, classes }}
+                                Template={Template}
+                                doUseDefaultCss={true}
+                            />
+                        );
+                    case "login-reset-password.ftl":
+                        return (
+                            <LoginResetPassword
+                                {...{ kcContext, i18n, classes }}
+                                Template={Template}
+                                doUseDefaultCss={true}
+                            />
+                        );
                     default:
                         return (
                             <DefaultPage
@@ -37,4 +60,19 @@ export default function KcPage(props: { kcContext: KcContext }) {
     );
 }
 
-const classes = {} satisfies { [key in ClassKey]?: string };
+const useStyles = tss.create(
+    ({ theme }) =>
+        ({
+            kcHtmlClass: {},
+            kcBodyClass: {
+                backgroundColor: theme.palette.background.default
+            }
+        }) satisfies { [key in ClassKey]?: unknown }
+);
+
+/*
+const classes = {
+    kcHtmlClass: "",
+    kcBodyClass: "",
+} satisfies { [key in ClassKey]?: string };
+ */
