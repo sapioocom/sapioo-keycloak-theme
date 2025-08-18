@@ -2,21 +2,35 @@ import { useTranslation } from "react-i18next";
 import LanguageSwitcher from "./LanguageSwitcher";
 import SapiooLogo from "../images/sapiooLogo.png";
 
+function resolveSapiooPortalUrl(): string {
+    let host = "";
+    if (typeof window !== "undefined" && window.location) {
+        host = window.location.hostname.toLowerCase();
+    }
+
+    const isDev = host.startsWith("panda1") || host === "localhost";
+
+    return isDev
+        ? "https://panda1-openid.sapioo.com/"
+        : "https://portal.sapioo.com/";
+}
+
 export default function Header({
-    language,
-    setLanguage
-}: {
+                                   language,
+                                   setLanguage,
+                               }: {
     language: string;
     setLanguage: (language: string) => void;
 }) {
     const { t } = useTranslation();
+    const portalUrl = resolveSapiooPortalUrl();
 
     return (
         <div
             style={{
                 borderBottom: "2px solid #ebebeb",
                 padding: "25px 0",
-                boxSizing: "border-box"
+                boxSizing: "border-box",
             }}
         >
             <div
@@ -27,11 +41,11 @@ export default function Header({
                     padding: "0 20px",
                     maxWidth: "1580px",
                     display: "flex",
-                    alignItems: "center"
+                    alignItems: "center",
                 }}
             >
                 <div className="flex items-center text-black font-bold text-xl">
-                    <a href="https://sapioo.com" rel="noopener noreferrer">
+                    <a href={portalUrl} rel="noopener noreferrer">
                         <img
                             src={SapiooLogo}
                             alt="Sapioo Logo"
@@ -45,7 +59,7 @@ export default function Header({
                         marginLeft: "auto",
                         display: "flex",
                         alignItems: "center",
-                        gap: "5px"
+                        gap: "5px",
                     }}
                 >
                     <a
@@ -54,7 +68,7 @@ export default function Header({
                             color: "black",
                             fontWeight: 500,
                             textDecoration: "none",
-                            fontSize: 16
+                            fontSize: 16,
                         }}
                     >
                         {t("contact")}
