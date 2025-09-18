@@ -1,0 +1,22 @@
+:root {
+    --wl-primary: #0ea5e9;
+    --wl-secondary: #22c55e;
+}
+
+/* Keycloak (PatternFly v5) buttons */
+.pf-v5-c-button.pf-m-primary {
+    background-color: var(--wl-primary) !important;
+    border-color: var(--wl-primary) !important;
+}
+.pf-v5-c-button.pf-m-primary:hover {
+    filter: brightness(0.95);
+}
+
+.pf-v5-c-button.pf-m-secondary {
+    background-color: var(--wl-secondary) !important;
+    border-color: var(--wl-secondary) !important;
+}
+.pf-v5-c-button.pf-m-secondary:hover {
+    filter: brightness(0.95);
+}
+

@@ -9,6 +9,7 @@ import type { I18n } from "./i18n";
 import type { KcContext } from "./KcContext";
 import { useStyles } from "tss-react/mui";
 import Alert from "@mui/material/Alert";
+import { useWhiteLabel } from "./whiteLabel/WhiteLabelProvider";
 
 export default function Template(props: TemplateProps<KcContext, I18n>) {
     const {
@@ -28,32 +29,41 @@ export default function Template(props: TemplateProps<KcContext, I18n>) {
     } = props;
 
     const { kcClsx } = getKcClsx({ doUseDefaultCss, classes });
-
     const { msg, msgStr } = i18n;
-
     const { auth, url, message, isAppInitiatedAction } = kcContext;
+
+    const { config } = useWhiteLabel();
 
     useEffect(() => {
         document.title = documentTitle ?? msgStr("loginTitle", kcContext.realm.displayName);
     }, []);
 
-    useSetClassName({
-        qualifiedName: "html",
-        className: kcClsx("kcHtmlClass")
-    });
-
-    useSetClassName({
-        qualifiedName: "body",
-        className: bodyClassName ?? kcClsx("kcBodyClass")
-    });
+    useSetClassName({ qualifiedName: "html", className: kcClsx("kcHtmlClass") });
+    useSetClassName({ qualifiedName: "body", className: bodyClassName ?? kcClsx("kcBodyClass") });
 
     const { css, cx } = useStyles();
-
     const { isReadyToRender } = useInitialize({ kcContext, doUseDefaultCss });
+    if (!isReadyToRender) return null;
 
-    if (!isReadyToRender) {
-        return null;
-    }
+    const effectiveHeaderNode =
+        config?.logoUrl ? (
+            <img
+                src={config.logoUrl}
+                alt="logo"
+                style={{ maxHeight: 42, objectFit: "contain" }}
+                onError={(e) => {
+                    console.warn("[WL] logo failed to load", config.logoUrl);
+                    (e.currentTarget as HTMLImageElement).style.display = "none";
+                }}
+            />
+        ) : (
+            headerNode
+        );
+
+    const effectiveInfoNode =
+        config?.introductionText ? <span>{config.introductionText}</span> : infoNode;
+
+    const showInfo = displayInfo || !!config?.introductionText;
 
     return (
         <div
@@ -70,30 +80,31 @@ export default function Template(props: TemplateProps<KcContext, I18n>) {
             <div>
                 <header className={kcClsx("kcFormHeaderClass")}>
                     {(() => {
-                        const node = !(auth !== undefined && auth.showUsername && !auth.showResetCredentials) ? (
-                            <h1 id="kc-page-title" style={{ paddingBottom: 30 }}>
-                                {headerNode}
-                            </h1>
-                        ) : (
-                            <div id="kc-username" className={kcClsx("kcFormGroupClass")}>
-                                <label id="kc-attempted-username">{auth.attemptedUsername}</label>
-                                <a id="reset-login" href={url.loginRestartFlowUrl} aria-label={msgStr("restartLoginTooltip")}>
-                                    <div className="kc-login-tooltip">
-                                        <i className={kcClsx("kcResetFlowIcon")}></i>
-                                        <span className="kc-tooltip-text">{msg("restartLoginTooltip")}</span>
-                                    </div>
-                                </a>
-                            </div>
-                        );
+                        const node =
+                            !(auth !== undefined && auth.showUsername && !auth.showResetCredentials) ? (
+                                <h1 id="kc-page-title" style={{ paddingBottom: 30 }}>
+                                    {effectiveHeaderNode}
+                                </h1>
+                            ) : (
+                                <div id="kc-username" className={kcClsx("kcFormGroupClass")}>
+                                    <label id="kc-attempted-username">{auth.attemptedUsername}</label>
+                                    <a id="reset-login" href={url.loginRestartFlowUrl} aria-label={msgStr("restartLoginTooltip")}>
+                                        <div className="kc-login-tooltip">
+                                            <i className={kcClsx("kcResetFlowIcon")}></i>
+                                            <span className="kc-tooltip-text">{msg("restartLoginTooltip")}</span>
+                                        </div>
+                                    </a>
+                                </div>
+                            );
 
                         if (displayRequiredFields) {
                             return (
                                 <div className={kcClsx("kcContentWrapperClass")}>
                                     <div className={clsx(kcClsx("kcLabelWrapperClass"), "subtitle")}>
-                                        <span className="subtitle">
-                                            <span className="required">*</span>
-                                            {msg("requiredFields")}
-                                        </span>
+                    <span className="subtitle">
+                      <span className="required">*</span>
+                        {msg("requiredFields")}
+                    </span>
                                     </div>
                                     <div className="col-md-10">{node}</div>
                                 </div>
@@ -107,15 +118,15 @@ export default function Template(props: TemplateProps<KcContext, I18n>) {
                     <div id="kc-content-wrapper">
                         {displayMessage && message !== undefined && (message.type !== "warning" || !isAppInitiatedAction) && (
                             <Alert severity={message.type} sx={{ mb: 3, mt: 3 }}>
-                                <span
-                                    className={kcClsx("kcAlertTitleClass")}
-                                    dangerouslySetInnerHTML={{
-                                        __html: kcSanitize(message.summary)
-                                    }}
-                                />
+                <span
+                    className={kcClsx("kcAlertTitleClass")}
+                    dangerouslySetInnerHTML={{ __html: kcSanitize(message.summary) }}
+                />
                             </Alert>
                         )}
+
                         {children}
+
                         {auth !== undefined && auth.showTryAnotherWayLink && (
                             <form id="kc-select-try-another-way-form" action={url.loginAction} method="post">
                                 <div className={kcClsx("kcFormGroupClass")}>
@@ -133,8 +144,10 @@ export default function Template(props: TemplateProps<KcContext, I18n>) {
                                 </div>
                             </form>
                         )}
+
                         {socialProvidersNode}
-                        {displayInfo && (
+
+                        {showInfo && (
                             <div
                                 className={css({
                                     display: "flex",
@@ -143,7 +156,7 @@ export default function Template(props: TemplateProps<KcContext, I18n>) {
                                     marginTop: 20
                                 })}
                             >
-                                {infoNode}
+                                {effectiveInfoNode}
                             </div>
                         )}
                     </div>
