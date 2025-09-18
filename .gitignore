@@ -56,10 +56,5 @@ jspm_packages
 /build
 /storybook-static
 
-# IDE (IntelliJ/WS)
-.idea/
-*.iml
-
-# Local artifacts for upload
-out/
-
+# build output of `jsx-email`
+/.rendered

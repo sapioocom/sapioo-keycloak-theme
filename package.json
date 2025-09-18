@@ -1,61 +1,61 @@
 {
-    "name": "keycloakify-starter",
-    "version": "0.0.0",
-    "description": "Starter for Keycloakify 11",
-    "repository": {
-        "type": "git",
-        "url": "git://github.com/codegouvfr/keycloakify-starter.git"
-    },
-    "type": "module",
-    "scripts": {
-        "dev": "vite",
-        "build": "tsc && vite build",
-        "build-keycloak-theme": "npm run build && keycloakify build",
-        "storybook": "storybook dev -p 6006",
-        "release:overwrite": "yarn build-keycloak-theme && open dist_keycloak",
-        "release:latest": "yarn build-keycloak-theme && mkdir -p out/latest && cp -f dist_keycloak/keycloak-theme-for-kc-22-to-25.jar out/latest/sapioo-keycloak-theme_kc22-25_latest.jar && cp -f dist_keycloak/keycloak-theme-for-kc-all-other-versions.jar out/latest/sapioo-keycloak-theme_kc-others_latest.jar && open out/latest",
-        "release:archive": "yarn build-keycloak-theme && bash -lc 'TAG=$(date +\"%Y-%m-%d_%H-%M\"); mkdir -p out/$TAG; cp dist_keycloak/keycloak-theme-for-kc-22-to-25.jar out/$TAG/sapioo-keycloak-theme_kc22-25_${TAG}.jar; cp dist_keycloak/keycloak-theme-for-kc-all-other-versions.jar out/$TAG/sapioo-keycloak-theme_kc-others_${TAG}.jar; open out/$TAG || true'",
-        "clean:jars": "rm -f dist_keycloak/*.jar || true",
-        "format": "prettier . --write"
-    },
-    "license": "MIT",
-    "keywords": [],
-    "dependencies": {
-        "@emotion/react": "^11.14.0",
-        "@emotion/styled": "^11.14.0",
-        "@mui/icons-material": "^6.4.3",
-        "@mui/material": "^6.4.2",
-        "i18next": "^24.2.2",
-        "keycloakify": "^11.8.8",
-        "react": "^18.2.0",
-        "react-dom": "^18.2.0",
-        "react-i18next": "^15.4.0",
-        "react-router-dom": "^6.29.0",
-        "tss-react": "^4.9.15"
-    },
-    "devDependencies": {
-        "@eslint/js": "^9.15.0",
-        "@storybook/react": "^8.1.10",
-        "@storybook/react-vite": "^8.1.10",
-        "@types/react": "^18.2.43",
-        "@types/react-dom": "^18.2.17",
-        "@typescript-eslint/eslint-plugin": "^8.15.0",
-        "@typescript-eslint/parser": "^8.15.0",
-        "@vitejs/plugin-react": "^4.2.1",
-        "eslint": "^9.15.0",
-        "eslint-config-prettier": "^9.1.0",
-        "eslint-plugin-react": "^7.37.2",
-        "eslint-plugin-react-hooks": "^5.0.0",
-        "eslint-plugin-react-refresh": "^0.4.14",
-        "eslint-plugin-storybook": "^0.11.1",
-        "globals": "^15.12.0",
-        "prettier": "3.3.1",
-        "storybook": "^8.1.10",
-        "typescript": "^5.2.2",
-        "typescript-eslint": "^8.15.0",
-        "vite": "^5.0.8"
-    },
-    "engines": {
-        "node": "^18.0.0 || >=20.0.0"
-    }
+  "name": "keycloakify-starter",
+  "version": "0.0.0",
+  "description": "Starter for Keycloakify 11",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/codegouvfr/keycloakify-starter.git"
+  },
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "build-keycloak-theme": "npm run build && keycloakify build",
+    "storybook": "storybook dev -p 6006",
+    "release:overwrite": "yarn build-keycloak-theme && open dist_keycloak",
+    "release:latest": "yarn build-keycloak-theme && mkdir -p out/latest && cp -f dist_keycloak/keycloak-theme-for-kc-22-to-25.jar out/latest/sapioo-keycloak-theme_kc22-25_latest.jar && cp -f dist_keycloak/keycloak-theme-for-kc-all-other-versions.jar out/latest/sapioo-keycloak-theme_kc-others_latest.jar && open out/latest",
+    "release:archive": "yarn build-keycloak-theme && bash -lc 'TAG=$(date +\"%Y-%m-%d_%H-%M\"); mkdir -p out/$TAG; cp dist_keycloak/keycloak-theme-for-kc-22-to-25.jar out/$TAG/sapioo-keycloak-theme_kc22-25_${TAG}.jar; cp dist_keycloak/keycloak-theme-for-kc-all-other-versions.jar out/$TAG/sapioo-keycloak-theme_kc-others_${TAG}.jar; open out/$TAG || true'",
+    "clean:jars": "rm -f dist_keycloak/*.jar || true",
+    "format": "prettier . --write"
+  },
+  "license": "MIT",
+  "keywords": [],
+  "dependencies": {
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.0",
+    "@mui/icons-material": "^6.4.3",
+    "@mui/material": "^6.4.2",
+    "i18next": "^24.2.2",
+    "keycloakify": "^11.9.3",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-i18next": "^15.4.0",
+    "react-router-dom": "^6.29.0",
+    "tss-react": "^4.9.15"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.15.0",
+    "@storybook/react": "^8.1.10",
+    "@storybook/react-vite": "^8.1.10",
+    "@types/react": "^18.2.43",
+    "@types/react-dom": "^18.2.17",
+    "@typescript-eslint/eslint-plugin": "^8.15.0",
+    "@typescript-eslint/parser": "^8.15.0",
+    "@vitejs/plugin-react": "^4.2.1",
+    "eslint": "^9.15.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-react": "^7.37.2",
+    "eslint-plugin-react-hooks": "^5.0.0",
+    "eslint-plugin-react-refresh": "^0.4.14",
+    "eslint-plugin-storybook": "^0.11.1",
+    "globals": "^15.12.0",
+    "prettier": "3.3.1",
+    "storybook": "^8.1.10",
+    "typescript": "^5.2.2",
+    "typescript-eslint": "^8.15.0",
+    "vite": "^5.0.8"
+  },
+  "engines": {
+    "node": "^18.0.0 || >=20.0.0"
+  }
 }
