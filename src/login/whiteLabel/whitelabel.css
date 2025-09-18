@@ -3,7 +3,6 @@
     --wl-secondary: #22c55e;
 }
 
-/* Keycloak (PatternFly v5) buttons */
 .pf-v5-c-button.pf-m-primary {
     background-color: var(--wl-primary) !important;
     border-color: var(--wl-primary) !important;
