@@ -66,3 +66,8 @@ storybook-static/
 *.jar
 package-lock.json
 .DS_Store
+
+# Local WL test files (do not commit)
+.env.local
+public/api/
+public/logo.png
