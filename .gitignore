@@ -68,3 +68,4 @@ storybook-static/
 .env.local
 public/api/
 public/logo.png
+.idea/
