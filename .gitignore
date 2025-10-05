@@ -33,6 +33,9 @@ jspm_packages
 # Optional npm cache directory
 .npm
 
+# Always ignore Yarn lock (we use npm)
+yarn.lock
+
 # yarn cache directory
 .pnp.*
 .yarn/*
@@ -42,30 +45,24 @@ jspm_packages
 !.yarn/sdks
 !.yarn/versions
 
-
 # Optional REPL history
 .node_repl_history
 
+# Editors / OS
 .vscode
-
 .DS_Store
 
+# Build outputs
 /dist
-
 /dist_keycloak
 /build
 /storybook-static
-
-# build output of `jsx-email`
-/.rendered
-.idea/
+/rendered
 out/
 dist/
 dist_keycloak/
 storybook-static/
 *.jar
-package-lock.json
-.DS_Store
 
 # Local WL test files (do not commit)
 .env.local
