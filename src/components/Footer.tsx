@@ -2,7 +2,7 @@ export default function Footer() {
     return (
         <div
             style={{
-                backgroundColor: "#5257E1",
+                backgroundColor: "var(--wl-secondary, #5257E1)",
                 height: 72,
                 width: "100%",
                 position: "fixed",
@@ -11,30 +11,23 @@ export default function Footer() {
                 zIndex: 1000,
                 display: "flex",
                 justifyContent: "center",
-                alignItems: "center"
+                alignItems: "center",
             }}
         >
             <div
                 className="container m-auto flex items-center justify-between"
-                style={{
-                    width: "91%",
-                    margin: "0 auto",
-                    padding: "0 20px",
-                    maxWidth: "1580px",
-                    display: "flex",
-                    alignItems: "center"
-                }}
+                style={{ width: "91%", margin: "0 auto", padding: "0 20px", maxWidth: 1580, display: "flex", alignItems: "center" }}
             >
                 <div style={{ marginLeft: "auto" }}>
                     <p
                         style={{
                             color: "white",
-                            fontSize: "16px",
+                            fontSize: 16,
                             margin: 0,
                             whiteSpace: "nowrap",
                             overflow: "hidden",
                             textOverflow: "ellipsis",
-                            fontWeight: 500
+                            fontWeight: 500,
                         }}
                     >
                         © 2025 Sapioo, Inc.

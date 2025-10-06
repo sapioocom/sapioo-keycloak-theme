@@ -1,31 +1,59 @@
+import { StrictMode, useState } from "react";
 import { createRoot } from "react-dom/client";
-import { StrictMode } from "react";
 import { KcPage } from "./kc.gen";
-import "./login/config"; // Import the i18n configuration
+import i18n from "./login/config";
+import Header from "./components/Header";
+import Footer from "./components/Footer";
+
 import { WhiteLabelProvider } from "./login/whiteLabel/WhiteLabelProvider";
 
-// The following block can be uncommented to test a specific page with `yarn dev`
-// Don't forget to comment back or your bundle size will increase
-/*
 import { getKcContextMock } from "./login/KcPageStory";
 
-if (import.meta.env.DEV) {
+import type { KcContext } from "./login/KcContext";
+declare global {
+    interface Window {
+        kcContext?: KcContext;
+    }
+}
+
+if (import.meta.env.DEV && !window.kcContext) {
     window.kcContext = getKcContextMock({
-        pageId: "register.ftl",
-        overrides: {}
+        pageId: "login.ftl",
+        overrides: {},
     });
 }
-*/
+
+function NoKcFallback() {
+    const [language, setLanguage] = useState(i18n.language || "en");
+    const onSetLanguage = (lng: string) => {
+        i18n.changeLanguage(lng);
+        setLanguage(lng);
+    };
+
+    return (
+        <>
+            <Header language={language} setLanguage={onSetLanguage} />
+            <div
+                style={{
+                    minHeight: "calc(100vh - 72px)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    padding: "24px 16px",
+                    textAlign: "center",
+                }}
+            >
+                <h1 style={{ color: "var(--wl-primary, #1f3765)" }}>No Keycloak Context</h1>
+            </div>
+            <Footer />
+        </>
+    );
+}
 
 createRoot(document.getElementById("root")!).render(
     <StrictMode>
         <WhiteLabelProvider>
-            {!window.kcContext ? (
-                <h1>No Keycloak Context</h1>
-            ) : (
-                <KcPage kcContext={window.kcContext} />
-            )}
+            {window.kcContext ? <KcPage kcContext={window.kcContext} /> : <NoKcFallback />}
         </WhiteLabelProvider>
     </StrictMode>
 );
-

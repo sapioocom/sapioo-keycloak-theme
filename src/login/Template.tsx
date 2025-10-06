@@ -9,7 +9,6 @@ import type { I18n } from "./i18n";
 import type { KcContext } from "./KcContext";
 import { useStyles } from "tss-react/mui";
 import Alert from "@mui/material/Alert";
-import { useWhiteLabel } from "./whiteLabel/WhiteLabelProvider";
 
 export default function Template(props: TemplateProps<KcContext, I18n>) {
     const {
@@ -25,14 +24,12 @@ export default function Template(props: TemplateProps<KcContext, I18n>) {
         i18n,
         doUseDefaultCss,
         classes,
-        children
+        children,
     } = props;
 
     const { kcClsx } = getKcClsx({ doUseDefaultCss, classes });
     const { msg, msgStr } = i18n;
     const { auth, url, message, isAppInitiatedAction } = kcContext;
-
-    const { config } = useWhiteLabel();
 
     useEffect(() => {
         document.title = documentTitle ?? msgStr("loginTitle", kcContext.realm.displayName);
@@ -45,26 +42,6 @@ export default function Template(props: TemplateProps<KcContext, I18n>) {
     const { isReadyToRender } = useInitialize({ kcContext, doUseDefaultCss });
     if (!isReadyToRender) return null;
 
-    const effectiveHeaderNode =
-        config?.logoUrl ? (
-            <img
-                src={config.logoUrl}
-                alt="logo"
-                style={{ maxHeight: 42, objectFit: "contain" }}
-                onError={(e) => {
-                    console.warn("[WL] logo failed to load", config.logoUrl);
-                    (e.currentTarget as HTMLImageElement).style.display = "none";
-                }}
-            />
-        ) : (
-            headerNode
-        );
-
-    const effectiveInfoNode =
-        config?.introductionText ? <span>{config.introductionText}</span> : infoNode;
-
-    const showInfo = displayInfo || !!config?.introductionText;
-
     return (
         <div
             className={cx(
@@ -73,7 +50,7 @@ export default function Template(props: TemplateProps<KcContext, I18n>) {
                     height: "65vh",
                     display: "flex",
                     justifyContent: "center",
-                    alignItems: "center"
+                    alignItems: "center",
                 })
             )}
         >
@@ -83,7 +60,7 @@ export default function Template(props: TemplateProps<KcContext, I18n>) {
                         const node =
                             !(auth !== undefined && auth.showUsername && !auth.showResetCredentials) ? (
                                 <h1 id="kc-page-title" style={{ paddingBottom: 30 }}>
-                                    {effectiveHeaderNode}
+                                    {headerNode}
                                 </h1>
                             ) : (
                                 <div id="kc-username" className={kcClsx("kcFormGroupClass")}>
@@ -114,49 +91,29 @@ export default function Template(props: TemplateProps<KcContext, I18n>) {
                         return node;
                     })()}
                 </header>
+
                 <div id="kc-content">
                     <div id="kc-content-wrapper">
                         {displayMessage && message !== undefined && (message.type !== "warning" || !isAppInitiatedAction) && (
                             <Alert severity={message.type} sx={{ mb: 3, mt: 3 }}>
-                <span
-                    className={kcClsx("kcAlertTitleClass")}
-                    dangerouslySetInnerHTML={{ __html: kcSanitize(message.summary) }}
-                />
+                                <span className={kcClsx("kcAlertTitleClass")} dangerouslySetInnerHTML={{ __html: kcSanitize(message.summary) }} />
                             </Alert>
                         )}
 
                         {children}
 
-                        {auth !== undefined && auth.showTryAnotherWayLink && (
-                            <form id="kc-select-try-another-way-form" action={url.loginAction} method="post">
-                                <div className={kcClsx("kcFormGroupClass")}>
-                                    <input type="hidden" name="tryAnotherWay" value="on" />
-                                    <a
-                                        href="#"
-                                        id="try-another-way"
-                                        onClick={() => {
-                                            document.forms["kc-select-try-another-way-form" as never].submit();
-                                            return false;
-                                        }}
-                                    >
-                                        {msg("doTryAnotherWay")}
-                                    </a>
-                                </div>
-                            </form>
-                        )}
-
                         {socialProvidersNode}
 
-                        {showInfo && (
+                        {displayInfo && infoNode && (
                             <div
                                 className={css({
                                     display: "flex",
                                     justifyContent: "center",
                                     alignItems: "center",
-                                    marginTop: 20
+                                    marginTop: 20,
                                 })}
                             >
-                                {effectiveInfoNode}
+                                {infoNode}
                             </div>
                         )}
                     </div>
