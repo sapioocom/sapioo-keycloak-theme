@@ -22,10 +22,45 @@ function setCssVars(cfg?: WhiteLabelConfig | null) {
 }
 
 function readWhiteLabelIdFromUrl(): string | undefined {
-    const sp = new URLSearchParams(window.location.search);
-    const id = sp.get("whiteLabelId") || sp.get("white_label_id") || sp.get("wl");
-    if (!id) return;
-    return id;
+    const candidates = ["whiteLabelId", "whitelabelId", "white_label_id", "wl"];
+
+    const topParams = new URLSearchParams(window.location.search);
+    for (const k of candidates) {
+        const v = topParams.get(k);
+        if (v) return v;
+    }
+
+    const redirectRaw = topParams.get("redirect_uri");
+    if (redirectRaw) {
+        try {
+            const decoded = decodeURIComponent(redirectRaw);
+            const redirectUrl = new URL(decoded);
+            const innerParams = new URLSearchParams(redirectUrl.search);
+            for (const k of candidates) {
+                const v = innerParams.get(k);
+                if (v) return v;
+            }
+            if (redirectUrl.hash) {
+                const hashParams = new URLSearchParams(redirectUrl.hash.slice(1));
+                for (const k of candidates) {
+                    const v = hashParams.get(k);
+                    if (v) return v;
+                }
+            }
+        } catch {
+            /* ignore malformed redirect_uri */
+        }
+    }
+
+    if (window.location.hash) {
+        const hashParams = new URLSearchParams(window.location.hash.slice(1));
+        for (const k of candidates) {
+            const v = hashParams.get(k);
+            if (v) return v;
+        }
+    }
+
+    return undefined;
 }
 
 export const WhiteLabelProvider: React.FC<React.PropsWithChildren<{}>> = ({ children }) => {
