@@ -1,7 +1,6 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
-import { fetchWhiteLabelConfig, isUuid } from "./api";
+import { isUuid, sanitize } from "./api";
 import type { WhiteLabelConfig, WhiteLabelState } from "./types";
-import "./whitelabel.css";
 
 type Ctx = {
     state: WhiteLabelState;
@@ -44,26 +43,18 @@ export const WhiteLabelProvider: React.FC<React.PropsWithChildren<{}>> = ({ chil
             console.warn("[WL] invalid whiteLabelId format:", whiteLabelId);
             return;
         }
-
-        let cancelled = false;
         setState({ status: "loading", config: null, whiteLabelId });
 
-        fetchWhiteLabelConfig(whiteLabelId)
-            .then((cfg) => {
-                if (cancelled) return;
-                console.log("[WL] config ready", cfg);
-                setCssVars(cfg);
-                setState({ status: "ready", config: cfg });
+        fetch(`${import.meta.env.VITE_WHITELABEL_API_BASE}/${whiteLabelId}`)
+            .then(res=>res.json())
+            .then(data=>{
+                const formatedData = sanitize(data)
+                setCssVars(formatedData);
+                setState({ status: "ready", config: formatedData });
             })
-            .catch((err) => {
-                if (cancelled) return;
-                console.error("[WL] failed to load config:", err);
-                setState({ status: "error", config: null, error: String(err), whiteLabelId });
-            });
-
-        return () => {
-            cancelled = true;
-        };
+            .catch((err)=>{
+                console.error(err)
+            })
     }, [whiteLabelId]);
 
     const value: Ctx = {

@@ -24,7 +24,7 @@ export default function LanguageSwitcher({
     const handleLanguageChange = (selectedLanguage: string) => {
         setLanguage(selectedLanguage);
         i18n.changeLanguage(selectedLanguage);
-        console.log(`Language changed to: ${selectedLanguage}`);
+        // console.log(`Language changed to: ${selectedLanguage}`);
 
         const urlParams = new URLSearchParams(window.location.search);
         urlParams.set("ui_locales", selectedLanguage);

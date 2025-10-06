@@ -11,7 +11,7 @@ function isHexColor(v: unknown): v is string {
     return typeof v === "string" && /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(v);
 }
 
-function sanitize(cfg: any): WhiteLabelConfig {
+export function sanitize(cfg: any): WhiteLabelConfig {
     const out: WhiteLabelConfig = {
         whiteLabelId: String(cfg.whiteLabelId ?? cfg.id ?? ""),
         logoUrl: typeof cfg.logoUrl === "string" ? cfg.logoUrl : undefined,
@@ -52,7 +52,7 @@ export async function fetchWhiteLabelConfig(
             ? `${base}${id}`
             : `${base}/` + id;
 
-    console.log("[WL] fetching", url);
+    // console.log("[WL] fetching", url);
 
     const res = await fetch(url, { credentials: "include" }).catch((e) => {
         throw new Error("network_error:" + e);
