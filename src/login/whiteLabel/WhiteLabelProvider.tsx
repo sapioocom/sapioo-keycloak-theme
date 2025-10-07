@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
-import { isUuid, sanitize } from "./api";
 import type { WhiteLabelConfig, WhiteLabelState } from "./types";
+import { isUuid, sanitize } from "./api";
 
 type Ctx = {
     state: WhiteLabelState;
