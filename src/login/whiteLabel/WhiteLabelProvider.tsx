@@ -79,7 +79,6 @@ export const WhiteLabelProvider: React.FC<React.PropsWithChildren<{}>> = ({ chil
             return;
         }
         setState({ status: "loading", config: null, whiteLabelId });
-        console.log("API Base URL:", import.meta.env.VITE_WHITELABEL_API_BASE);
 
         fetch(`${import.meta.env.VITE_WHITELABEL_API_BASE}/${whiteLabelId}`)
             .then(res=>res.json())
