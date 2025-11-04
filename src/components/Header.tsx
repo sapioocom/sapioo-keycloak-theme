@@ -24,12 +24,26 @@ export default function Header({
     const { config } = useWhiteLabel();
 
     const logoSrc = config?.logoUrl ?? SapiooLogo;
+    const isCustomLogo = !!config?.logoUrl;
 
     return (
-        <div style={{ borderBottom: "2px solid #ebebeb", padding: "25px 0", boxSizing: "border-box" }}>
+        <div
+            style={{
+                borderBottom: "2px solid #ebebeb",
+                padding: "25px 0",
+                boxSizing: "border-box",
+            }}
+        >
             <div
                 className="container m-auto flex items-center justify-between"
-                style={{ width: "91%", margin: "0 auto", padding: "0 20px", maxWidth: 1580, display: "flex", alignItems: "center" }}
+                style={{
+                    width: "91%",
+                    margin: "0 auto",
+                    padding: "0 20px",
+                    maxWidth: 1580,
+                    display: "flex",
+                    alignItems: "center",
+                }}
             >
                 <div className="flex items-center text-black font-bold text-xl">
                     <a href={portalUrl} rel="noopener noreferrer">
@@ -37,14 +51,34 @@ export default function Header({
                             src={logoSrc}
                             alt="Logo"
                             className="object-contain cursor-pointer"
-                            style={{ width: 95, maxHeight: 48 }}
-                            onError={(e) => ((e.currentTarget as HTMLImageElement).src = SapiooLogo)}
+                            style={{
+                                width: isCustomLogo ? 95 : 162,
+                                maxHeight: isCustomLogo ? 48 : "none",
+                            }}
+                            onError={(e) =>
+                                ((e.currentTarget as HTMLImageElement).src = SapiooLogo)
+                            }
                         />
                     </a>
                 </div>
 
-                <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 5 }}>
-                    <a href="mailto:sapioo.info@gmail.com" style={{ color: "black", fontWeight: 500, textDecoration: "none", fontSize: 16 }}>
+                <div
+                    style={{
+                        marginLeft: "auto",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 5,
+                    }}
+                >
+                    <a
+                        href="mailto:sapioo.info@gmail.com"
+                        style={{
+                            color: "black",
+                            fontWeight: 500,
+                            textDecoration: "none",
+                            fontSize: 16,
+                        }}
+                    >
                         {t("contact")}
                     </a>
                     <LanguageSwitcher language={language} setLanguage={setLanguage} />
