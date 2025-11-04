@@ -2,13 +2,12 @@ import { useWhiteLabel } from "../login/whiteLabel/WhiteLabelProvider";
 
 export default function Footer() {
     const { config } = useWhiteLabel();
-    const year = new Date().getFullYear();
     const brand = (config?.companyName && config.companyName.trim()) || "Sapioo, Inc.";
 
     return (
         <div
             style={{
-                backgroundColor: "var(--wl-secondary, #5257E1)",
+                backgroundColor: "var(--wl-primary, #5257E1)",
                 height: 72,
                 width: "100%",
                 position: "fixed",
@@ -44,7 +43,7 @@ export default function Footer() {
                         }}
                         aria-label="footer-copyright"
                     >
-                        © {year} {brand}
+                        {brand}
                     </p>
                 </div>
             </div>

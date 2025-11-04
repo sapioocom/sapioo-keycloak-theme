@@ -37,7 +37,7 @@ export default function Header({
                             src={logoSrc}
                             alt="Logo"
                             className="object-contain cursor-pointer"
-                            style={{ width: 162, height: "auto" }}
+                            style={{ width: 95, maxHeight: 48 }}
                             onError={(e) => ((e.currentTarget as HTMLImageElement).src = SapiooLogo)}
                         />
                     </a>

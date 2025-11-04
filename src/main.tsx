@@ -43,7 +43,7 @@ function NoKcFallback() {
                     textAlign: "center",
                 }}
             >
-                <h1 style={{ color: "var(--wl-primary, #1f3765)" }}>No Keycloak Context</h1>
+                <h1 style={{ color: "var(--wl-secondary, #1f3765)" }}>No Keycloak Context</h1>
             </div>
             <Footer />
         </>

@@ -215,7 +215,7 @@ export default function Login(
                                             name="login"
                                             sx={{
                                                 width: language === "ka" ? "205px" : "120px",
-                                                backgroundColor: "var(--wl-primary, #ffbd30)", 
+                                                backgroundColor: "var(--wl-secondary, #ffbd30)",
                                                 boxShadow: "none",
                                                 padding: "16px 32px",
                                                 borderRadius: "15px",
