@@ -81,15 +81,21 @@ export const WhiteLabelProvider: React.FC<React.PropsWithChildren<{}>> = ({ chil
         setState({ status: "loading", config: null, whiteLabelId });
 
         fetch(`${import.meta.env.VITE_WHITELABEL_API_BASE}/${whiteLabelId}`)
-            .then(res=>res.json())
-            .then(data=>{
-                const formatedData = sanitize(data)
-                setCssVars(formatedData);
-                setState({ status: "ready", config: formatedData });
+            .then((res) => res.json())
+            .then((data) => {
+                const formatted = sanitize(data);
+                setCssVars(formatted);
+                setState({ status: "ready", config: formatted });
             })
-            .catch((err)=>{
-                console.error(err)
-            })
+            .catch((err) => {
+                console.error("[WL] fetch error", err);
+                setState({
+                    status: "error",
+                    config: null,
+                    error: err?.message || "WhiteLabel fetch failed",
+                    whiteLabelId,
+                });
+            });
     }, [whiteLabelId]);
 
     const value: Ctx = {

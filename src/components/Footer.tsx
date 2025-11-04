@@ -1,4 +1,10 @@
+import { useWhiteLabel } from "../login/whiteLabel/WhiteLabelProvider";
+
 export default function Footer() {
+    const { config } = useWhiteLabel();
+    const year = new Date().getFullYear();
+    const brand = (config?.companyName && config.companyName.trim()) || "Sapioo, Inc.";
+
     return (
         <div
             style={{
@@ -16,7 +22,14 @@ export default function Footer() {
         >
             <div
                 className="container m-auto flex items-center justify-between"
-                style={{ width: "91%", margin: "0 auto", padding: "0 20px", maxWidth: 1580, display: "flex", alignItems: "center" }}
+                style={{
+                    width: "91%",
+                    margin: "0 auto",
+                    padding: "0 20px",
+                    maxWidth: 1580,
+                    display: "flex",
+                    alignItems: "center",
+                }}
             >
                 <div style={{ marginLeft: "auto" }}>
                     <p
@@ -29,8 +42,9 @@ export default function Footer() {
                             textOverflow: "ellipsis",
                             fontWeight: 500,
                         }}
+                        aria-label="footer-copyright"
                     >
-                        © 2025 Sapioo, Inc.
+                        © {year} {brand}
                     </p>
                 </div>
             </div>

@@ -24,6 +24,7 @@ export function sanitize(cfg: any): WhiteLabelConfig {
         primaryColor: isHexColor(cfg.primaryColor) ? cfg.primaryColor : undefined,
         secondaryColor: isHexColor(cfg.secondaryColor) ? cfg.secondaryColor : undefined,
         color: isHexColor(cfg.color) ? cfg.color : undefined,
+        companyName: typeof cfg.companyName === "string" ? cfg.companyName.trim() : undefined,
     };
     return out;
 }

@@ -7,6 +7,7 @@ export type WhiteLabelConfig = {
     primaryColor?: string;
     secondaryColor?: string;
     color?: string;
+    companyName?: string;
 };
 
 export type WhiteLabelState =
