@@ -10,11 +10,9 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
+    "build-keycloak-theme": "npm run build && keycloakify build",
     "storybook": "storybook dev -p 6006",
-    "build-keycloak-theme:dev": "vite build --mode development",
-    "build-keycloak-theme:prod": "vite build --mode production",
-    "release:overwrite:dev": "yarn build-keycloak-theme:dev && open dist_keycloak",
-    "release:overwrite:prod": "yarn build-keycloak-theme:prod && open dist_keycloak",
+    "release:overwrite": "yarn build-keycloak-theme && open dist_keycloak",
     "release:latest": "yarn build-keycloak-theme && mkdir -p out/latest && cp -f dist_keycloak/keycloak-theme-for-kc-22-to-25.jar out/latest/sapioo-keycloak-theme_kc22-25_latest.jar && cp -f dist_keycloak/keycloak-theme-for-kc-all-other-versions.jar out/latest/sapioo-keycloak-theme_kc-others_latest.jar && open out/latest",
     "release:archive": "yarn build-keycloak-theme && bash -lc 'TAG=$(date +\"%Y-%m-%d_%H-%M\"); mkdir -p out/$TAG; cp dist_keycloak/keycloak-theme-for-kc-22-to-25.jar out/$TAG/sapioo-keycloak-theme_kc22-25_${TAG}.jar; cp dist_keycloak/keycloak-theme-for-kc-all-other-versions.jar out/$TAG/sapioo-keycloak-theme_kc-others_${TAG}.jar; open out/$TAG || true'",
     "clean:jars": "rm -f dist_keycloak/*.jar || true",
