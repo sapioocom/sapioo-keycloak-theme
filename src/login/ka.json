@@ -3,5 +3,7 @@
     "username": "მომხმარებლის სახელი",
     "password": "პაროლი",
     "submit": "შესვლა",
-    "forgotPassword": "პაროლი დაგავიწყდათ?"
+    "forgotPassword": "პაროლი დაგავიწყდათ?",
+    "createAccount": "რეგისტრაცია",
+    "Create an account": "რეგისტრაცია"
 }
