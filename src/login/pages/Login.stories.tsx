@@ -33,7 +33,7 @@ export const WithInvalidCredential: Story = {
                     },
                     get: (fieldName: string) => {
                         if (fieldName === "username" || fieldName === "password") {
-                            return i18n.t("invalidCredentials"); // Use translation key
+                            return i18n.t("invalidCredentials");
                         }
                         return "";
                     }
@@ -224,7 +224,8 @@ export const WithErrorMessage: Story = {
         <KcPageStory
             kcContext={{
                 message: {
-                    summary: "The time allotted for the connection has elapsed.<br/>The login process will restart from the beginning.",
+                    summary:
+                        "The time allotted for the connection has elapsed.<br/>The login process will restart from the beginning.",
                     type: "error"
                 }
             }}
@@ -282,6 +283,7 @@ export const WithTwoSocialProviders: Story = {
         />
     )
 };
+
 export const WithNoSocialProviders: Story = {
     render: args => (
         <KcPageStory
@@ -295,6 +297,7 @@ export const WithNoSocialProviders: Story = {
         />
     )
 };
+
 export const WithMoreThanTwoSocialProviders: Story = {
     render: args => (
         <KcPageStory
@@ -337,6 +340,7 @@ export const WithMoreThanTwoSocialProviders: Story = {
         />
     )
 };
+
 export const WithSocialProvidersAndWithoutRememberMe: Story = {
     render: args => (
         <KcPageStory
@@ -355,6 +359,23 @@ export const WithSocialProvidersAndWithoutRememberMe: Story = {
                     ]
                 },
                 realm: { rememberMe: false }
+            }}
+        />
+    )
+};
+
+/**
+ * Shows Forgot password + Create an account only when clientId is customer portal
+ */
+export const CustomerPortalClient: Story = {
+    render: () => (
+        <KcPageStory
+            kcContext={{
+                client: { clientId: "alina_ge-cp-login" },
+                realm: {
+                    registrationAllowed: true,
+                    resetPasswordAllowed: true
+                }
             }}
         />
     )
