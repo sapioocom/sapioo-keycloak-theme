@@ -371,7 +371,7 @@ export const CustomerPortalClient: Story = {
     render: () => (
         <KcPageStory
             kcContext={{
-                client: { clientId: "exampleRealm-cp-login" },
+                client: { clientId: "alina_ge-cp-login" },
                 realm: {
                     registrationAllowed: true,
                     resetPasswordAllowed: true
