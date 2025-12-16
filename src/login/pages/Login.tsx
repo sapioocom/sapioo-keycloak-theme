@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { kcSanitize } from "keycloakify/lib/kcSanitize";
 import { clsx } from "keycloakify/tools/clsx";
@@ -33,19 +33,6 @@ export default function Login(
     const { kcClsx } = getKcClsx({ doUseDefaultCss, classes });
     const { social, realm, url, usernameHidden, login, auth, messagesPerField } = kcContext;
 
-    // ✅ Only show Register/Forgot Password for customer-portal login client
-    // In production kcContext.client may be missing, but client_id is always present in the auth URL query params.
-    const clientIdFromQuery =
-        typeof window !== "undefined"
-            ? new URLSearchParams(window.location.search).get("client_id") ?? ""
-            : "";
-
-    // If you want strict match: clientIdFromQuery === `${realm.name}-cp-login`
-    const isCustomerPortalLogin = clientIdFromQuery.endsWith("-cp-login");
-
-    const canShowReset = isCustomerPortalLogin && !!url.loginResetCredentialsUrl;
-    const canShowRegister = isCustomerPortalLogin && !!url.registrationUrl;
-
     const { t } = useTranslation();
     const [language, setLanguage] = useState(i18n.language || "en");
     const [isLoginButtonDisabled, setIsLoginButtonDisabled] = useState(false);
@@ -57,10 +44,19 @@ export default function Login(
         document.title = "Sapioo - Sign In";
     }, []);
 
+    // ✅ Multi-tenant safe: works for alina_ge-cp-login, sapioo_ge-cp-login, etc.
+    const clientIdFromQuery = useMemo(() => {
+        if (typeof window === "undefined") return "";
+        return new URLSearchParams(window.location.search).get("client_id") ?? "";
+    }, []);
+
+    const isCustomerPortalLogin = clientIdFromQuery.endsWith("-cp-login");
+
+    const canShowReset = isCustomerPortalLogin && realm.resetPasswordAllowed && !!url.loginResetCredentialsUrl;
+    const canShowRegister = isCustomerPortalLogin && realm.registrationAllowed && !!url.registrationUrl;
+
     const headerNode = config?.introductionText ? (
-        <span
-            dangerouslySetInnerHTML={{ __html: kcSanitize(config.introductionText) }}
-        />
+        <span dangerouslySetInnerHTML={{ __html: kcSanitize(config.introductionText) }} />
     ) : (
         <span style={{ fontWeight: 500, fontSize: 30 }}>{t("signInTitle")}</span>
     );
@@ -80,66 +76,48 @@ export default function Login(
                     displayInfo={false}
                     socialProvidersNode={
                         <>
-                            {realm.password &&
-                                social?.providers &&
-                                social.providers.length !== 0 && (
-                                    <div
-                                        id="kc-social-providers"
-                                        className={kcClsx("kcFormSocialAccountSectionClass")}
+                            {realm.password && social?.providers && social.providers.length !== 0 && (
+                                <div id="kc-social-providers" className={kcClsx("kcFormSocialAccountSectionClass")}>
+                                    <hr />
+                                    <h2>{t("identity-provider-login-label")}</h2>
+                                    <ul
+                                        className={kcClsx(
+                                            "kcFormSocialAccountListClass",
+                                            social.providers.length > 3 && "kcFormSocialAccountListGridClass"
+                                        )}
                                     >
-                                        <hr />
-                                        <h2>{t("identity-provider-login-label")}</h2>
-                                        <ul
-                                            className={kcClsx(
-                                                "kcFormSocialAccountListClass",
-                                                social.providers.length > 3 &&
-                                                "kcFormSocialAccountListGridClass"
-                                            )}
-                                        >
-                                            {social.providers.map((...[p, , providers]) => (
-                                                <li key={p.alias}>
-                                                    <a
-                                                        id={`social-${p.alias}`}
-                                                        className={kcClsx(
-                                                            "kcFormSocialAccountListButtonClass",
-                                                            providers.length > 3 &&
-                                                            "kcFormSocialAccountGridItem"
+                                        {social.providers.map((...[p, , providers]) => (
+                                            <li key={p.alias}>
+                                                <a
+                                                    id={`social-${p.alias}`}
+                                                    className={kcClsx(
+                                                        "kcFormSocialAccountListButtonClass",
+                                                        providers.length > 3 && "kcFormSocialAccountGridItem"
+                                                    )}
+                                                    type="button"
+                                                    href={p.loginUrl}
+                                                >
+                                                    {p.iconClasses && (
+                                                        <i className={clsx(kcClsx("kcCommonLogoIdP"), p.iconClasses)} aria-hidden="true"></i>
+                                                    )}
+                                                    <span
+                                                        className={clsx(
+                                                            kcClsx("kcFormSocialAccountNameClass"),
+                                                            p.iconClasses && "kc-social-icon-text"
                                                         )}
-                                                        type="button"
-                                                        href={p.loginUrl}
-                                                    >
-                                                        {p.iconClasses && (
-                                                            <i
-                                                                className={clsx(
-                                                                    kcClsx("kcCommonLogoIdP"),
-                                                                    p.iconClasses
-                                                                )}
-                                                                aria-hidden="true"
-                                                            ></i>
-                                                        )}
-                                                        <span
-                                                            className={clsx(
-                                                                kcClsx("kcFormSocialAccountNameClass"),
-                                                                p.iconClasses && "kc-social-icon-text"
-                                                            )}
-                                                            dangerouslySetInnerHTML={{
-                                                                __html: kcSanitize(p.displayName),
-                                                            }}
-                                                        />
-                                                    </a>
-                                                </li>
-                                            ))}
-                                        </ul>
-                                    </div>
-                                )}
+                                                        dangerouslySetInnerHTML={{ __html: kcSanitize(p.displayName) }}
+                                                    />
+                                                </a>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            )}
                         </>
                     }
                 >
                     <div id="kc-form" style={{ display: "flex", justifyContent: "center" }}>
-                        <div
-                            id="kc-form-wrapper"
-                            style={{ width: "100%", maxWidth: 600, padding: "0 20px" }}
-                        >
+                        <div id="kc-form-wrapper" style={{ width: "100%", maxWidth: 600, padding: "0 20px" }}>
                             {realm.password && (
                                 <form
                                     id="kc-form-login"
@@ -165,10 +143,7 @@ export default function Login(
                                                 <TextField
                                                     sx={{
                                                         width: "clamp(300px, 60vw, 600px)",
-                                                        "& .MuiOutlinedInput-root": {
-                                                            borderRadius: 25,
-                                                            height: 45,
-                                                        },
+                                                        "& .MuiOutlinedInput-root": { borderRadius: 25, height: 45 }
                                                     }}
                                                     label=""
                                                     variant="outlined"
@@ -184,12 +159,7 @@ export default function Login(
                                                                 style={{ color: "#d32f2f" }}
                                                                 aria-live="polite"
                                                                 dangerouslySetInnerHTML={{
-                                                                    __html: kcSanitize(
-                                                                        messagesPerField.getFirstError(
-                                                                            "username",
-                                                                            "password"
-                                                                        )
-                                                                    ),
+                                                                    __html: kcSanitize(messagesPerField.getFirstError("username", "password"))
                                                                 }}
                                                             />
                                                         )
@@ -204,10 +174,7 @@ export default function Login(
                                             <FormControl
                                                 sx={{
                                                     width: "clamp(300px, 60vw, 600px)",
-                                                    "& .MuiOutlinedInput-root": {
-                                                        borderRadius: 25,
-                                                        height: 45,
-                                                    },
+                                                    "& .MuiOutlinedInput-root": { borderRadius: 25, height: 45 }
                                                 }}
                                                 variant="outlined"
                                                 error={messagesPerField.existsError("username", "password")}
@@ -223,11 +190,7 @@ export default function Login(
                                                     endAdornment={
                                                         <InputAdornment position="end">
                                                             <IconButton
-                                                                aria-label={
-                                                                    showPassword
-                                                                        ? "hide the password"
-                                                                        : "display the password"
-                                                                }
+                                                                aria-label={showPassword ? "hide the password" : "display the password"}
                                                                 onClick={() => setShowPassword(!showPassword)}
                                                                 onMouseDown={(e) => e.preventDefault()}
                                                                 edge="end"
@@ -238,102 +201,90 @@ export default function Login(
                                                     }
                                                     label=""
                                                 />
-
-                                                {usernameHidden &&
-                                                    messagesPerField.existsError("username", "password") && (
-                                                        <FormHelperText>
-                              <span
-                                  style={{ color: "#d32f2f" }}
-                                  aria-live="polite"
-                                  dangerouslySetInnerHTML={{
-                                      __html: kcSanitize(
-                                          messagesPerField.getFirstError(
-                                              "username",
-                                              "password"
-                                          )
-                                      ),
-                                  }}
-                              />
-                                                        </FormHelperText>
-                                                    )}
+                                                {usernameHidden && messagesPerField.existsError("username", "password") && (
+                                                    <FormHelperText>
+                            <span
+                                style={{ color: "#d32f2f" }}
+                                aria-live="polite"
+                                dangerouslySetInnerHTML={{
+                                    __html: kcSanitize(messagesPerField.getFirstError("username", "password"))
+                                }}
+                            />
+                                                    </FormHelperText>
+                                                )}
                                             </FormControl>
                                         </div>
                                     </div>
 
-                                    {/* ✅ Password options row (Remember me / Forgot / Register) */}
+                                    {/* ✅ Remember / Forgot / Register row */}
                                     <div className={kcClsx("kcFormGroupClass", "kcFormSettingClass")}>
                                         <div id="kc-form-options">
                                             {realm.rememberMe && !usernameHidden && (
                                                 <FormControlLabel
-                                                    control={
-                                                        <Checkbox
-                                                            defaultChecked={!!login.rememberMe}
-                                                            name="rememberMe"
-                                                            tabIndex={5}
-                                                        />
-                                                    }
+                                                    control={<Checkbox defaultChecked={!!login.rememberMe} name="rememberMe" tabIndex={5} />}
                                                     label={t("rememberMe")}
                                                 />
                                             )}
                                         </div>
 
-                                        <div
-                                            className={kcClsx("kcFormOptionsWrapperClass")}
-                                            style={{
-                                                display: "flex",
-                                                alignItems: "center",
-                                                gap: 16,
-                                            }}
-                                        >
-                                            {/* Forgot password – only customer portal */}
-                                            {canShowReset && (
-                                                <Link
-                                                    sx={{
-                                                        display: "inline-block",
-                                                        position: "relative",
-                                                        top: 14,
-                                                        fontWeight: 600,
-                                                    }}
-                                                    tabIndex={6}
-                                                    href={url.loginResetCredentialsUrl}
-                                                >
-                                                    {t("forgotPassword")}
-                                                </Link>
-                                            )}
+                                        {(canShowReset || canShowRegister) && (
+                                            <div
+                                                className={kcClsx("kcFormOptionsWrapperClass")}
+                                                style={{
+                                                    display: "flex",
+                                                    justifyContent: "space-between",
+                                                    alignItems: "center",
+                                                    width: "100%",
+                                                    marginTop: 6
+                                                }}
+                                            >
+                                                {/* Left: Forgot */}
+                                                <div style={{ minWidth: 0 }}>
+                                                    {canShowReset && (
+                                                        <Link
+                                                            tabIndex={6}
+                                                            href={url.loginResetCredentialsUrl}
+                                                            underline="hover"
+                                                            sx={{
+                                                                fontWeight: 600,
+                                                                fontSize: 14,
+                                                                lineHeight: "20px",
+                                                                whiteSpace: "nowrap"
+                                                            }}
+                                                        >
+                                                            {t("forgotPassword")}
+                                                        </Link>
+                                                    )}
+                                                </div>
 
-                                            {/* Register – only customer portal */}
-                                            {canShowRegister && (
-                                                <Link
-                                                    sx={{
-                                                        display: "inline-block",
-                                                        position: "relative",
-                                                        top: 14,
-                                                        fontWeight: 600,
-                                                    }}
-                                                    tabIndex={7}
-                                                    href={url.registrationUrl}
-                                                >
-                                                    Create an account
-                                                </Link>
-                                            )}
-                                        </div>
+                                                {/* Right: Register */}
+                                                <div style={{ minWidth: 0 }}>
+                                                    {canShowRegister && (
+                                                        <Link
+                                                            tabIndex={7}
+                                                            href={url.registrationUrl}
+                                                            underline="hover"
+                                                            sx={{
+                                                                fontWeight: 600,
+                                                                fontSize: 14,
+                                                                lineHeight: "20px",
+                                                                whiteSpace: "nowrap"
+                                                            }}
+                                                        >
+                                                            {t("createAccount") ?? "Create an account"}
+                                                        </Link>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
 
                                     <div
                                         id="kc-form-buttons"
                                         className={kcClsx("kcFormGroupClass")}
-                                        style={{
-                                            display: "flex",
-                                            justifyContent: "center",
-                                            alignItems: "center",
-                                        }}
+                                        style={{ display: "flex", justifyContent: "center", alignItems: "center" }}
                                     >
-                                        <input
-                                            type="hidden"
-                                            id="id-hidden-input"
-                                            name="credentialId"
-                                            value={auth.selectedCredential}
-                                        />
+                                        <input type="hidden" id="id-hidden-input" name="credentialId" value={auth.selectedCredential} />
                                         <Button
                                             variant="contained"
                                             type="submit"
@@ -346,10 +297,7 @@ export default function Login(
                                                 padding: "16px 32px",
                                                 borderRadius: "15px",
                                                 fontWeight: 700,
-                                                "&:hover": {
-                                                    filter: "brightness(0.95)",
-                                                    boxShadow: "none",
-                                                },
+                                                "&:hover": { filter: "brightness(0.95)", boxShadow: "none" }
                                             }}
                                         >
                                             {t("signInButton")}
