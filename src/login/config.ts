@@ -14,6 +14,7 @@ i18n.use(initReactI18next).init({
                 signInButton: "SIGN IN",
                 contact: "Contact",
                 invalidCredentials: "Invalid username or password.",
+                createAccount: "Create an account",
 
                 // REGISTER
                 createAccountTitle: "Create an account",
@@ -50,6 +51,7 @@ i18n.use(initReactI18next).init({
                 signInButton: "სისტემაში შესვლა",
                 contact: "კონტაქტი",
                 invalidCredentials: "არასწორი მომხმარებლის სახელი ან პაროლი.",
+                createAccount: "ანგარიშის შექმნა",
 
                 // REGISTER
                 createAccountTitle: "რეგისტრაცია",
