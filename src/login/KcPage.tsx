@@ -12,6 +12,7 @@ const UserProfileFormFields = lazy(
 
 const Login = lazy(() => import("./pages/Login"));
 const LoginResetPassword = lazy(() => import("./pages/LoginResetPassword"));
+const Register = lazy(() => import("./pages/Register"));
 
 const doMakeUserConfirmPassword = true;
 
@@ -37,6 +38,14 @@ export default function KcPage(props: { kcContext: KcContext }) {
                     case "login-reset-password.ftl":
                         return (
                             <LoginResetPassword
+                                {...{ kcContext, i18n, classes }}
+                                Template={Template}
+                                doUseDefaultCss={true}
+                            />
+                        );
+                    case "register.ftl":
+                        return (
+                            <Register
                                 {...{ kcContext, i18n, classes }}
                                 Template={Template}
                                 doUseDefaultCss={true}
@@ -69,10 +78,3 @@ const useStyles = tss.create(
             }
         }) satisfies { [key in ClassKey]?: unknown }
 );
-
-/*
-const classes = {
-    kcHtmlClass: "",
-    kcBodyClass: "",
-} satisfies { [key in ClassKey]?: string };
- */

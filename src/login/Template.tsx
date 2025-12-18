@@ -47,10 +47,12 @@ export default function Template(props: TemplateProps<KcContext, I18n>) {
             className={cx(
                 kcClsx("kcLoginClass"),
                 css({
-                    height: "65vh",
+                    minHeight: "calc(100vh - 220px)",
                     display: "flex",
                     justifyContent: "center",
-                    alignItems: "center",
+                    alignItems: "flex-start",
+                    paddingTop: "clamp(24px, 6vh, 64px)",
+                    boxSizing: "border-box",
                 })
             )}
         >

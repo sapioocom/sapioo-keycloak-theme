@@ -303,17 +303,8 @@ export default function Login(
 
                                             {/* Register – only customer portal */}
                                             {canShowRegister && (
-                                                <Link
-                                                    sx={{
-                                                        display: "inline-block",
-                                                        position: "relative",
-                                                        top: 14,
-                                                        fontWeight: 600,
-                                                    }}
-                                                    tabIndex={7}
-                                                    href={url.registrationUrl}
-                                                >
-                                                    Create an account
+                                                <Link href={url.registrationUrl}>
+                                                    {t("createAccount")}
                                                 </Link>
                                             )}
                                         </div>
