@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { kcSanitize } from "keycloakify/lib/kcSanitize";
 import type { PageProps } from "keycloakify/login/pages/PageProps";
 import { getKcClsx } from "keycloakify/login/lib/kcClsx";
@@ -35,9 +36,11 @@ export default function Register(
     const { kcContext, i18n: i18nProps, doUseDefaultCss, Template, classes } = props;
     const { kcClsx } = getKcClsx({ doUseDefaultCss, classes });
 
-    // NOTE: Keycloakify versions differ; we keep this resilient:
+    // NOTE: Keycloakify/KC versions differ; keep it resilient.
     const { url, messagesPerField } = kcContext as any;
     const profile = (kcContext as any).profile;
+
+    const { t } = useTranslation();
 
     const [language, setLanguage] = useState(i18n.language || "en");
     const [isSubmitDisabled, setIsSubmitDisabled] = useState(false);
@@ -54,24 +57,23 @@ export default function Register(
     const headerNode = config?.introductionText ? (
         <span dangerouslySetInnerHTML={{ __html: kcSanitize(config.introductionText) }} />
     ) : (
-        <span style={{ fontWeight: 500, fontSize: 30 }}>Create an account</span>
+        <span style={{ fontWeight: 500, fontSize: 30 }}>{t("createAccountTitle")}</span>
     );
 
     const formAction = (url as any).registrationAction ?? url.loginAction;
 
     const attributes: ProfileAttr[] = useMemo(() => {
-        // Most modern KC pages expose profile.attributes.
         const attrs = (profile?.attributes ?? []) as ProfileAttr[];
 
-        // If profile is not present in your KC version, fallback to a safe default set.
+        // Fallback if profile.attributes is missing
         if (!Array.isArray(attrs) || attrs.length === 0) {
             return [
-                { name: "username", required: true, displayName: "Username" },
-                { name: "password", required: true, displayName: "Password" },
-                { name: "password-confirm", required: true, displayName: "Confirm password" },
-                { name: "email", required: true, displayName: "Email" },
-                { name: "firstName", required: true, displayName: "First name" },
-                { name: "lastName", required: true, displayName: "Last name" }
+                { name: "username", required: true },
+                { name: "password", required: true },
+                { name: "password-confirm", required: true },
+                { name: "email", required: true },
+                { name: "firstName", required: true },
+                { name: "lastName", required: true }
             ];
         }
 
@@ -82,9 +84,31 @@ export default function Register(
     const isPasswordConfirmField = (name: string) =>
         name === "password-confirm" || name === "passwordConfirm" || name === "confirmPassword";
 
+    const getLabelKeyByAttrName = (name: string) => {
+        switch (name) {
+            case "username":
+                return "registerUsername";
+            case "password":
+                return "registerPassword";
+            case "password-confirm":
+            case "passwordConfirm":
+            case "confirmPassword":
+                return "registerConfirmPassword";
+            case "email":
+                return "registerEmail";
+            case "firstName":
+                return "registerFirstName";
+            case "lastName":
+                return "registerLastName";
+            default:
+                // fallback: show KC provided label if exists, otherwise raw name
+                return "";
+        }
+    };
+
     const getFieldLabel = (a: ProfileAttr) => {
-        // If Keycloak sends displayName already localized, keep it.
-        const base = a.displayName ?? a.name;
+        const key = getLabelKeyByAttrName(a.name);
+        const base = key ? t(key) : (a.displayName ?? a.name);
         return a.required ? `${base} *` : base;
     };
 
@@ -115,11 +139,13 @@ export default function Register(
                     classes={classes}
                     headerNode={headerNode}
                     displayInfo={false}
-                    // If any error exists, KC usually shows messages; we keep it consistent with Login
                     displayMessage={true}
                 >
                     <div id="kc-form" style={{ display: "flex", justifyContent: "center" }}>
-                        <div id="kc-form-wrapper" style={{ width: "100%", maxWidth: 600, padding: "0 20px" }}>
+                        <div
+                            id="kc-form-wrapper"
+                            style={{ width: "100%", maxWidth: 600, padding: "0 20px" }}
+                        >
                             <form
                                 id="kc-register-form"
                                 action={formAction}
@@ -146,7 +172,10 @@ export default function Register(
                                                     <FormControl
                                                         sx={{
                                                             width: "clamp(300px, 60vw, 600px)",
-                                                            "& .MuiOutlinedInput-root": { borderRadius: 25, height: 45 }
+                                                            "& .MuiOutlinedInput-root": {
+                                                                borderRadius: 25,
+                                                                height: 45
+                                                            }
                                                         }}
                                                         variant="outlined"
                                                         error={!!hasErr}
@@ -157,7 +186,11 @@ export default function Register(
                                                             endAdornment={
                                                                 <InputAdornment position="end">
                                                                     <IconButton
-                                                                        aria-label={showPassword ? "hide the password" : "display the password"}
+                                                                        aria-label={
+                                                                            showPassword
+                                                                                ? t("hidePasswordAria")
+                                                                                : t("showPasswordAria")
+                                                                        }
                                                                         onClick={() => setShowPassword(!showPassword)}
                                                                         onMouseDown={(e) => e.preventDefault()}
                                                                         edge="end"
@@ -167,7 +200,9 @@ export default function Register(
                                                                 </InputAdornment>
                                                             }
                                                         />
-                                                        {hasErr && <FormHelperText>{renderHelperError(name)}</FormHelperText>}
+                                                        {hasErr && (
+                                                            <FormHelperText>{renderHelperError(name)}</FormHelperText>
+                                                        )}
                                                     </FormControl>
                                                 </div>
                                             </div>
@@ -186,7 +221,10 @@ export default function Register(
                                                     <FormControl
                                                         sx={{
                                                             width: "clamp(300px, 60vw, 600px)",
-                                                            "& .MuiOutlinedInput-root": { borderRadius: 25, height: 45 }
+                                                            "& .MuiOutlinedInput-root": {
+                                                                borderRadius: 25,
+                                                                height: 45
+                                                            }
                                                         }}
                                                         variant="outlined"
                                                         error={!!hasErr}
@@ -198,18 +236,28 @@ export default function Register(
                                                                 <InputAdornment position="end">
                                                                     <IconButton
                                                                         aria-label={
-                                                                            showPasswordConfirm ? "hide the password" : "display the password"
+                                                                            showPasswordConfirm
+                                                                                ? t("hidePasswordAria")
+                                                                                : t("showPasswordAria")
                                                                         }
-                                                                        onClick={() => setShowPasswordConfirm(!showPasswordConfirm)}
+                                                                        onClick={() =>
+                                                                            setShowPasswordConfirm(!showPasswordConfirm)
+                                                                        }
                                                                         onMouseDown={(e) => e.preventDefault()}
                                                                         edge="end"
                                                                     >
-                                                                        {showPasswordConfirm ? <VisibilityOff /> : <Visibility />}
+                                                                        {showPasswordConfirm ? (
+                                                                            <VisibilityOff />
+                                                                        ) : (
+                                                                            <Visibility />
+                                                                        )}
                                                                     </IconButton>
                                                                 </InputAdornment>
                                                             }
                                                         />
-                                                        {hasErr && <FormHelperText>{renderHelperError(name)}</FormHelperText>}
+                                                        {hasErr && (
+                                                            <FormHelperText>{renderHelperError(name)}</FormHelperText>
+                                                        )}
                                                     </FormControl>
                                                 </div>
                                             </div>
@@ -228,7 +276,10 @@ export default function Register(
                                                 <TextField
                                                     sx={{
                                                         width: "clamp(300px, 60vw, 600px)",
-                                                        "& .MuiOutlinedInput-root": { borderRadius: 25, height: 45 }
+                                                        "& .MuiOutlinedInput-root": {
+                                                            borderRadius: 25,
+                                                            height: 45
+                                                        }
                                                     }}
                                                     label=""
                                                     variant="outlined"
@@ -254,14 +305,18 @@ export default function Register(
                                     }}
                                 >
                                     <Link sx={{ fontWeight: 600 }} href={url.loginUrl}>
-                                        &laquo; Back to Login
+                                        &laquo; {t("backToLogin")}
                                     </Link>
                                 </div>
 
                                 <div
                                     id="kc-form-buttons"
                                     className={kcClsx("kcFormGroupClass")}
-                                    style={{ display: "flex", justifyContent: "center", alignItems: "center" }}
+                                    style={{
+                                        display: "flex",
+                                        justifyContent: "center",
+                                        alignItems: "center"
+                                    }}
                                 >
                                     <Button
                                         variant="contained"
@@ -274,10 +329,13 @@ export default function Register(
                                             padding: "16px 32px",
                                             borderRadius: "15px",
                                             fontWeight: 700,
-                                            "&:hover": { filter: "brightness(0.95)", boxShadow: "none" }
+                                            "&:hover": {
+                                                filter: "brightness(0.95)",
+                                                boxShadow: "none"
+                                            }
                                         }}
                                     >
-                                        Register
+                                        {t("registerButton")}
                                     </Button>
                                 </div>
                             </form>

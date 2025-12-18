@@ -30,8 +30,8 @@ export default function LoginResetPassword(
     const { config } = useWhiteLabel();
 
     useEffect(() => {
-        document.title = "Sapioo - Reset Password";
-    }, []);
+        document.title = t("resetPasswordPageTitle");
+    }, [t]);
 
     const headerNode = config?.introductionText ? (
         <span dangerouslySetInnerHTML={{ __html: kcSanitize(config.introductionText) }} />
@@ -96,7 +96,7 @@ export default function LoginResetPassword(
                                                     />
                                                 ) : (
                                                     <span style={{ opacity: 0.7 }}>
-                            Enter your username or email and we’ll send you instructions to reset your password.
+                            {t("resetPasswordHint")}
                           </span>
                                                 )
                                             }
@@ -114,7 +114,7 @@ export default function LoginResetPassword(
                                     }}
                                 >
                                     <Link sx={{ fontWeight: 600 }} href={url.loginUrl}>
-                                        &laquo; Back to Login
+                                        &laquo; {t("backToLogin")}
                                     </Link>
                                 </div>
 
@@ -141,7 +141,7 @@ export default function LoginResetPassword(
                                             "&:hover": { filter: "brightness(0.95)", boxShadow: "none" }
                                         }}
                                     >
-                                        Submit
+                                        {t("submitButton")}
                                     </Button>
                                 </div>
                             </form>
