@@ -62,7 +62,7 @@ i18n.use(initReactI18next).init({
 
                 // REGISTER
                 createAccountTitle: "რეგისტრაცია",
-                registerUsername: "მომხმარებლის სახელი",
+                registerUsername: "სახელი",
                 registerPassword: "პაროლი",
                 registerConfirmPassword: "გაიმეორეთ პაროლი",
                 registerEmail: "ელ. ფოსტა",
