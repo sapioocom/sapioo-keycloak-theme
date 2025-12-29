@@ -1,11 +1,11 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
-import type { WhiteLabelConfig, WhiteLabelState } from "./types";
+import type { WhiteLabelConfig, WhiteLabelState, CustomerPortalId } from "./types";
 import { isUuid, sanitize } from "./api";
 
 type Ctx = {
     state: WhiteLabelState;
     config: WhiteLabelConfig | null;
-    whiteLabelId?: string;
+    customerPortalId?: string;
 };
 
 const WhiteLabelCtx = createContext<Ctx>({ state: { status: "idle", config: null }, config: null });
@@ -21,8 +21,17 @@ function setCssVars(cfg?: WhiteLabelConfig | null) {
     if (cfg.secondaryColor) root.setProperty("--wl-secondary", cfg.secondaryColor);
 }
 
-function readWhiteLabelIdFromUrl(): string | undefined {
-    const candidates = ["whiteLabelId", "whitelabelId", "white_label_id", "wl"];
+function readCustomerPortalIdFromUrl(): string | undefined {
+    const candidates = [
+        "customerPortalId",
+        "customer_portal_id",
+        "cp",
+        // legacy fallbacks:
+        "whiteLabelId",
+        "whitelabelId",
+        "white_label_id",
+        "wl",
+    ];
 
     const topParams = new URLSearchParams(window.location.search);
     for (const k of candidates) {
@@ -35,11 +44,13 @@ function readWhiteLabelIdFromUrl(): string | undefined {
         try {
             const decoded = decodeURIComponent(redirectRaw);
             const redirectUrl = new URL(decoded);
+
             const innerParams = new URLSearchParams(redirectUrl.search);
             for (const k of candidates) {
                 const v = innerParams.get(k);
                 if (v) return v;
             }
+
             if (redirectUrl.hash) {
                 const hashParams = new URLSearchParams(redirectUrl.hash.slice(1));
                 for (const k of candidates) {
@@ -63,45 +74,64 @@ function readWhiteLabelIdFromUrl(): string | undefined {
     return undefined;
 }
 
+function getCustomerPortalApiBase(): string | undefined {
+    const base = import.meta.env.VITE_CUSTOMER_PORTAL_API_BASE as string | undefined;
+    if (!base) return undefined;
+    return base.replace(/\/+$/, "");
+}
+
 export const WhiteLabelProvider: React.FC<React.PropsWithChildren<{}>> = ({ children }) => {
     const [state, setState] = useState<WhiteLabelState>({ status: "idle", config: null });
-    const whiteLabelId = useMemo(readWhiteLabelIdFromUrl, []);
+    const customerPortalId = useMemo(readCustomerPortalIdFromUrl, []);
 
     useEffect(() => {
         setCssVars(null);
 
-        if (!whiteLabelId) {
-            console.log("[WL] no whiteLabelId in URL – using defaults");
+        if (!customerPortalId) {
+            console.log("[CP] no customerPortalId in URL – using defaults");
             return;
         }
-        if (!isUuid(whiteLabelId)) {
-            console.warn("[WL] invalid whiteLabelId format:", whiteLabelId);
+        if (!isUuid(customerPortalId)) {
+            console.warn("[CP] invalid customerPortalId format:", customerPortalId);
             return;
         }
-        setState({ status: "loading", config: null, whiteLabelId });
 
-        fetch(`${import.meta.env.VITE_WHITELABEL_API_BASE}/${whiteLabelId}`)
-            .then((res) => res.json())
+        const apiBase = getCustomerPortalApiBase();
+        if (!apiBase) {
+            console.warn("[CP] missing VITE_CUSTOMER_PORTAL_API_BASE – using defaults");
+            return;
+        }
+
+        setState({ status: "loading", config: null, customerPortalId });
+
+        fetch(`${apiBase}/${customerPortalId}/whitelabel`)
+            .then(async (res) => {
+                if (!res.ok) {
+                    const txt = await res.text().catch(() => "");
+                    throw new Error(`HTTP ${res.status} ${res.statusText}${txt ? ` - ${txt}` : ""}`);
+                }
+                return res.json();
+            })
             .then((data) => {
-                const formatted = sanitize(data);
+                const formatted = sanitize(data, customerPortalId as CustomerPortalId);
                 setCssVars(formatted);
                 setState({ status: "ready", config: formatted });
             })
             .catch((err) => {
-                console.error("[WL] fetch error", err);
+                console.error("[CP] whitelabel fetch error", err);
                 setState({
                     status: "error",
                     config: null,
                     error: err?.message || "WhiteLabel fetch failed",
-                    whiteLabelId,
+                    customerPortalId,
                 });
             });
-    }, [whiteLabelId]);
+    }, [customerPortalId]);
 
     const value: Ctx = {
         state,
         config: state.status === "ready" ? state.config : null,
-        whiteLabelId,
+        customerPortalId,
     };
 
     return <WhiteLabelCtx.Provider value={value}>{children}</WhiteLabelCtx.Provider>;

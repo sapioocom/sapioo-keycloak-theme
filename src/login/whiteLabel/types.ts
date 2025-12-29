@@ -1,7 +1,8 @@
-export type WhiteLabelId = string;
+export type CustomerPortalId = string;
 
 export type WhiteLabelConfig = {
-    whiteLabelId: WhiteLabelId;
+    customerPortalId: CustomerPortalId;
+    whiteLabelId?: string;
     logoUrl?: string;
     introductionText?: string;
     primaryColor?: string;
@@ -12,6 +13,6 @@ export type WhiteLabelConfig = {
 
 export type WhiteLabelState =
     | { status: "idle"; config: null }
-    | { status: "loading"; config: null; whiteLabelId: WhiteLabelId }
+    | { status: "loading"; config: null; customerPortalId: CustomerPortalId }
     | { status: "ready"; config: WhiteLabelConfig }
-    | { status: "error"; config: null; error: string; whiteLabelId?: WhiteLabelId };
+    | { status: "error"; config: null; error: string; customerPortalId?: CustomerPortalId };

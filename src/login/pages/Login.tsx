@@ -26,6 +26,134 @@ import Header from "../../components/Header";
 import Footer from "../../components/Footer";
 import { useWhiteLabel } from "../whiteLabel/WhiteLabelProvider";
 
+function getCustomerPortalApiBase(): string | undefined {
+    const base = import.meta.env.VITE_CUSTOMER_PORTAL_API_BASE as string | undefined;
+    if (!base) return undefined;
+    return base.replace(/\/+$/, "");
+}
+
+function normalizeKey(v: unknown): string {
+    return String(v ?? "").trim();
+}
+
+/**
+ * Read customerPortalId from URL (query/hash/redirect_uri), so event-sending
+ * does NOT depend on whitelabel fetch status (which may 500).
+ */
+function readCustomerPortalIdFromUrl(): string | undefined {
+    const candidates = [
+        "customerPortalId",
+        "customer_portal_id",
+        "cp",
+        // legacy fallback (old links)
+        "whiteLabelId",
+        "whitelabelId",
+        "white_label_id",
+        "wl",
+    ];
+
+    const topParams = new URLSearchParams(window.location.search);
+    for (const k of candidates) {
+        const v = topParams.get(k);
+        if (v) return v;
+    }
+
+    const redirectRaw = topParams.get("redirect_uri");
+    if (redirectRaw) {
+        try {
+            const decoded = decodeURIComponent(redirectRaw);
+            const redirectUrl = new URL(decoded);
+
+            const innerParams = new URLSearchParams(redirectUrl.search);
+            for (const k of candidates) {
+                const v = innerParams.get(k);
+                if (v) return v;
+            }
+
+            if (redirectUrl.hash) {
+                const hashParams = new URLSearchParams(redirectUrl.hash.slice(1));
+                for (const k of candidates) {
+                    const v = hashParams.get(k);
+                    if (v) return v;
+                }
+            }
+        } catch {
+            /* ignore malformed redirect_uri */
+        }
+    }
+
+    if (window.location.hash) {
+        const hashParams = new URLSearchParams(window.location.hash.slice(1));
+        for (const k of candidates) {
+            const v = hashParams.get(k);
+            if (v) return v;
+        }
+    }
+
+    return undefined;
+}
+
+/**
+ * ✅ 100% deterministic:
+ * - ONLY triggers if message.type === "success"
+ * - AND message key is in this whitelist.
+ */
+const REGISTRATION_SUCCESS_KEYS = new Set<string>([
+    "accountCreatedMessage",
+    "accountCreated",
+    "registerSuccess",
+    "registrationSuccessful",
+]);
+
+function extractMessageKey(kcContext: any): string {
+    const msg = kcContext?.message;
+    const summary = normalizeKey(msg?.summary);
+    const message = normalizeKey(msg?.message);
+    return summary || message;
+}
+
+function isRegistrationCompletedByKey(kcContext: any): { ok: boolean; key: string } {
+    const msg = kcContext?.message;
+    const type = normalizeKey(msg?.type);
+    if (type !== "success") {
+        return { ok: false, key: extractMessageKey(kcContext) };
+    }
+
+    const key = extractMessageKey(kcContext);
+    if (!key) return { ok: false, key: "" };
+
+    return { ok: REGISTRATION_SUCCESS_KEYS.has(key), key };
+}
+
+async function sendRegistrationCompletedEvent(customerPortalId: string): Promise<void> {
+    const apiBase = getCustomerPortalApiBase();
+    if (!apiBase) {
+        console.warn("[CP] missing VITE_CUSTOMER_PORTAL_API_BASE – cannot send registration-completed");
+        return;
+    }
+
+    const endpoint = `${apiBase}/${customerPortalId}/events/registration-completed`;
+
+    try {
+        const res = await fetch(endpoint, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({}),
+            keepalive: true,
+        });
+
+        if (!res.ok) {
+            const txt = await res.text().catch(() => "");
+            console.warn("[CP] registration-completed failed:", res.status, txt);
+            return;
+        }
+
+        console.log("[CP] registration-completed sent successfully");
+    } catch (err) {
+        console.warn("[CP] registration-completed request error:", err);
+    }
+}
+
 export default function Login(
     props: PageProps<Extract<KcContext, { pageId: "login.ftl" }>, I18n>
 ) {
@@ -33,14 +161,12 @@ export default function Login(
     const { kcClsx } = getKcClsx({ doUseDefaultCss, classes });
     const { social, realm, url, usernameHidden, login, auth, messagesPerField } = kcContext;
 
-    // ✅ Only show Register/Forgot Password for customer-portal login client
-    // In production kcContext.client may be missing, but client_id is always present in the auth URL query params.
+    // Only show Register/Forgot Password for customer-portal login client
     const clientIdFromQuery =
         typeof window !== "undefined"
             ? new URLSearchParams(window.location.search).get("client_id") ?? ""
             : "";
 
-    // If you want strict match: clientIdFromQuery === `${realm.name}-cp-login`
     const isCustomerPortalLogin = clientIdFromQuery.endsWith("-cp-login");
 
     const canShowReset = isCustomerPortalLogin && !!url.loginResetCredentialsUrl;
@@ -53,14 +179,45 @@ export default function Login(
 
     const { config } = useWhiteLabel();
 
+    // event should not depend on whitelabel fetch status
+    const customerPortalIdFromUrl =
+        typeof window !== "undefined" ? readCustomerPortalIdFromUrl() : undefined;
+
     useEffect(() => {
         document.title = "Sapioo - Sign In";
     }, []);
 
+    useEffect(() => {
+        if (!customerPortalIdFromUrl) return;
+        if (!isCustomerPortalLogin) return;
+
+        const { ok, key } = isRegistrationCompletedByKey(kcContext as any);
+
+        if (!ok) {
+            const msg = (kcContext as any)?.message;
+            if (normalizeKey(msg?.type) === "success") {
+                console.warn("[CP] success message detected but key is not whitelisted → event NOT sent", {
+                    receivedKey: key,
+                    message: msg,
+                });
+            }
+            return;
+        }
+
+        const guardKey = `cp:${customerPortalIdFromUrl}:event:registration-completed:sent`;
+        if (sessionStorage.getItem(guardKey) === "1") return;
+
+        sessionStorage.setItem(guardKey, "1");
+        console.log("[CP] registration success key matched → sending registration-completed", {
+            customerPortalId: customerPortalIdFromUrl,
+            key,
+        });
+
+        void sendRegistrationCompletedEvent(customerPortalIdFromUrl);
+    }, [customerPortalIdFromUrl, isCustomerPortalLogin, kcContext]);
+
     const headerNode = config?.introductionText ? (
-        <span
-            dangerouslySetInnerHTML={{ __html: kcSanitize(config.introductionText) }}
-        />
+        <span dangerouslySetInnerHTML={{ __html: kcSanitize(config.introductionText) }} />
     ) : (
         <span style={{ fontWeight: 500, fontSize: 30 }}>{t("signInTitle")}</span>
     );
@@ -153,13 +310,13 @@ export default function Login(
                                 >
                                     {!usernameHidden && (
                                         <div className={kcClsx("kcFormGroupClass")}>
-                      <span style={{ fontSize: 20 }}>
-                        {!realm.loginWithEmailAllowed
-                            ? t("username")
-                            : !realm.registrationEmailAsUsername
-                                ? t("usernameOrEmail")
-                                : t("email")}
-                      </span>
+                                            <span style={{ fontSize: 20 }}>
+                                                {!realm.loginWithEmailAllowed
+                                                    ? t("username")
+                                                    : !realm.registrationEmailAsUsername
+                                                        ? t("usernameOrEmail")
+                                                        : t("email")}
+                                            </span>
 
                                             <div style={{ display: "flex", justifyContent: "center" }}>
                                                 <TextField
@@ -242,25 +399,24 @@ export default function Login(
                                                 {usernameHidden &&
                                                     messagesPerField.existsError("username", "password") && (
                                                         <FormHelperText>
-                              <span
-                                  style={{ color: "#d32f2f" }}
-                                  aria-live="polite"
-                                  dangerouslySetInnerHTML={{
-                                      __html: kcSanitize(
-                                          messagesPerField.getFirstError(
-                                              "username",
-                                              "password"
-                                          )
-                                      ),
-                                  }}
-                              />
+                                                            <span
+                                                                style={{ color: "#d32f2f" }}
+                                                                aria-live="polite"
+                                                                dangerouslySetInnerHTML={{
+                                                                    __html: kcSanitize(
+                                                                        messagesPerField.getFirstError(
+                                                                            "username",
+                                                                            "password"
+                                                                        )
+                                                                    ),
+                                                                }}
+                                                            />
                                                         </FormHelperText>
                                                     )}
                                             </FormControl>
                                         </div>
                                     </div>
 
-                                    {/* ✅ Password options row (Remember me / Forgot / Register) */}
                                     <div className={kcClsx("kcFormGroupClass", "kcFormSettingClass")}>
                                         <div id="kc-form-options">
                                             {realm.rememberMe && !usernameHidden && (
@@ -279,13 +435,8 @@ export default function Login(
 
                                         <div
                                             className={kcClsx("kcFormOptionsWrapperClass")}
-                                            style={{
-                                                display: "flex",
-                                                alignItems: "center",
-                                                gap: 16,
-                                            }}
+                                            style={{ display: "flex", alignItems: "center", gap: 16 }}
                                         >
-                                            {/* Forgot password – only customer portal */}
                                             {canShowReset && (
                                                 <Link
                                                     sx={{
@@ -301,7 +452,6 @@ export default function Login(
                                                 </Link>
                                             )}
 
-                                            {/* Register – only customer portal */}
                                             {canShowRegister && (
                                                 <Link
                                                     sx={{
@@ -311,7 +461,8 @@ export default function Login(
                                                         fontWeight: 600,
                                                     }}
                                                     tabIndex={7}
-                                                    href={url.registrationUrl}>
+                                                    href={url.registrationUrl}
+                                                >
                                                     {t("createAccount")}
                                                 </Link>
                                             )}
@@ -321,11 +472,7 @@ export default function Login(
                                     <div
                                         id="kc-form-buttons"
                                         className={kcClsx("kcFormGroupClass")}
-                                        style={{
-                                            display: "flex",
-                                            justifyContent: "center",
-                                            alignItems: "center",
-                                        }}
+                                        style={{ display: "flex", justifyContent: "center", alignItems: "center" }}
                                     >
                                         <input
                                             type="hidden"
@@ -345,10 +492,7 @@ export default function Login(
                                                 padding: "16px 32px",
                                                 borderRadius: "15px",
                                                 fontWeight: 700,
-                                                "&:hover": {
-                                                    filter: "brightness(0.95)",
-                                                    boxShadow: "none",
-                                                },
+                                                "&:hover": { filter: "brightness(0.95)", boxShadow: "none" },
                                             }}
                                         >
                                             {t("signInButton")}
