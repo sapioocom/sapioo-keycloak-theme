@@ -26,6 +26,13 @@ i18n.use(initReactI18next).init({
                 registerLastName: "Last name",
                 registerButton: "REGISTER",
 
+                // REGISTER - CUSTOM FIELDS
+                sapiooAccountId: "Sapioo account id",
+                sapiooDomain: "Sapioo domain",
+                sapiooRole: "Sapioo role",
+                sapiooRoleId: "Sapioo role id",
+                sapiooTimezone: "Sapioo timezone",
+
                 // FORGOT / RESET PASSWORD
                 resetPasswordPageTitle: "Sapioo - Reset Password",
                 resetPasswordHint:
@@ -62,6 +69,13 @@ i18n.use(initReactI18next).init({
                 registerFirstName: "სახელი",
                 registerLastName: "გვარი",
                 registerButton: "რეგისტრაცია",
+
+                // REGISTER - CUSTOM FIELDS
+                sapiooAccountId: "Sapioo ანგარიშის ID",
+                sapiooDomain: "დომენი",
+                sapiooRole: "როლი",
+                sapiooRoleId: "როლის ID",
+                sapiooTimezone: "დროის სარტყელი",
 
                 // FORGOT / RESET PASSWORD
                 resetPasswordPageTitle: "Sapioo - პაროლის აღდგენა",

@@ -100,11 +100,22 @@ export default function Register(
                 return "registerFirstName";
             case "lastName":
                 return "registerLastName";
+            case "sapioo_account_id":
+                return "sapiooAccountId";
+            case "sapioo_domain":
+                return "sapiooDomain";
+            case "sapioo_role":
+                return "sapiooRole";
+            case "sapioo_role_id":
+                return "sapiooRoleId";
+            case "sapioo_timezone":
+                return "sapiooTimezone";
+
             default:
-                // fallback: show KC provided label if exists, otherwise raw name
                 return "";
         }
     };
+
 
     const getFieldLabel = (a: ProfileAttr) => {
         const key = getLabelKeyByAttrName(a.name);
@@ -141,7 +152,15 @@ export default function Register(
                     displayInfo={false}
                     displayMessage={true}
                 >
-                    <div id="kc-form" style={{ display: "flex", justifyContent: "center" }}>
+                    <div
+                        id="kc-form"
+                        style={{
+                            display: "flex",
+                            justifyContent: "center",
+                            paddingBottom: 120, // ✅ reserve space so the button never hides behind Footer
+                        }}
+                    >
+
                         <div
                             id="kc-form-wrapper"
                             style={{ width: "100%", maxWidth: 600, padding: "0 20px" }}
