@@ -157,7 +157,7 @@ export default function Register(
                         style={{
                             display: "flex",
                             justifyContent: "center",
-                            paddingBottom: 120, // ✅ reserve space so the button never hides behind Footer
+                            paddingBottom: 120,
                         }}
                     >
 
