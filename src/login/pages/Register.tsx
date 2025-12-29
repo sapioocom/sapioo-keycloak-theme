@@ -65,7 +65,6 @@ export default function Register(
     const attributes: ProfileAttr[] = useMemo(() => {
         const attrs = (profile?.attributes ?? []) as ProfileAttr[];
 
-        // Fallback if profile.attributes is missing
         if (!Array.isArray(attrs) || attrs.length === 0) {
             return [
                 { name: "username", required: true },
@@ -73,7 +72,13 @@ export default function Register(
                 { name: "password-confirm", required: true },
                 { name: "email", required: true },
                 { name: "firstName", required: true },
-                { name: "lastName", required: true }
+                { name: "lastName", required: true },
+
+                { name: "sapioo_account_id", required: false },
+                { name: "sapioo_domain", required: false },
+                { name: "sapioo_role", required: false },
+                { name: "sapioo_role_id", required: false },
+                { name: "sapioo_timezone", required: false }
             ];
         }
 
@@ -100,6 +105,7 @@ export default function Register(
                 return "registerFirstName";
             case "lastName":
                 return "registerLastName";
+
             case "sapioo_account_id":
                 return "sapiooAccountId";
             case "sapioo_domain":
@@ -115,7 +121,6 @@ export default function Register(
                 return "";
         }
     };
-
 
     const getFieldLabel = (a: ProfileAttr) => {
         const key = getLabelKeyByAttrName(a.name);
@@ -157,10 +162,9 @@ export default function Register(
                         style={{
                             display: "flex",
                             justifyContent: "center",
-                            paddingBottom: 120,
+                            paddingBottom: 120
                         }}
                     >
-
                         <div
                             id="kc-form-wrapper"
                             style={{ width: "100%", maxWidth: 600, padding: "0 20px" }}
