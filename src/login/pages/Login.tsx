@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { kcSanitize } from "keycloakify/lib/kcSanitize";
 import { clsx } from "keycloakify/tools/clsx";
@@ -26,132 +26,15 @@ import Header from "../../components/Header";
 import Footer from "../../components/Footer";
 import { useWhiteLabel } from "../whiteLabel/WhiteLabelProvider";
 
-function getCustomerPortalApiBase(): string | undefined {
-    const base = import.meta.env.VITE_CUSTOMER_PORTAL_API_BASE as string | undefined;
-    if (!base) return undefined;
-    return base.replace(/\/+$/, "");
-}
+import {
+    readCustomerPortalIdFromUrl,
+    isRegistrationCompleted,
+    sendRegistrationCompletedEvent,
+    withCustomerPortalId,
+} from "../customerPortal/customerPortal";
 
 function normalizeKey(v: unknown): string {
     return String(v ?? "").trim();
-}
-
-/**
- * Read customerPortalId from URL (query/hash/redirect_uri), so event-sending
- * does NOT depend on whitelabel fetch status (which may 500).
- */
-function readCustomerPortalIdFromUrl(): string | undefined {
-    const candidates = [
-        "customerPortalId",
-        "customer_portal_id",
-        "cp",
-        // legacy fallback (old links)
-        "whiteLabelId",
-        "whitelabelId",
-        "white_label_id",
-        "wl",
-    ];
-
-    const topParams = new URLSearchParams(window.location.search);
-    for (const k of candidates) {
-        const v = topParams.get(k);
-        if (v) return v;
-    }
-
-    const redirectRaw = topParams.get("redirect_uri");
-    if (redirectRaw) {
-        try {
-            const decoded = decodeURIComponent(redirectRaw);
-            const redirectUrl = new URL(decoded);
-
-            const innerParams = new URLSearchParams(redirectUrl.search);
-            for (const k of candidates) {
-                const v = innerParams.get(k);
-                if (v) return v;
-            }
-
-            if (redirectUrl.hash) {
-                const hashParams = new URLSearchParams(redirectUrl.hash.slice(1));
-                for (const k of candidates) {
-                    const v = hashParams.get(k);
-                    if (v) return v;
-                }
-            }
-        } catch {
-            /* ignore malformed redirect_uri */
-        }
-    }
-
-    if (window.location.hash) {
-        const hashParams = new URLSearchParams(window.location.hash.slice(1));
-        for (const k of candidates) {
-            const v = hashParams.get(k);
-            if (v) return v;
-        }
-    }
-
-    return undefined;
-}
-
-/**
- * ✅ 100% deterministic:
- * - ONLY triggers if message.type === "success"
- * - AND message key is in this whitelist.
- */
-const REGISTRATION_SUCCESS_KEYS = new Set<string>([
-    "accountCreatedMessage",
-    "accountCreated",
-    "registerSuccess",
-    "registrationSuccessful",
-]);
-
-function extractMessageKey(kcContext: any): string {
-    const msg = kcContext?.message;
-    const summary = normalizeKey(msg?.summary);
-    const message = normalizeKey(msg?.message);
-    return summary || message;
-}
-
-function isRegistrationCompletedByKey(kcContext: any): { ok: boolean; key: string } {
-    const msg = kcContext?.message;
-    const type = normalizeKey(msg?.type);
-    if (type !== "success") {
-        return { ok: false, key: extractMessageKey(kcContext) };
-    }
-
-    const key = extractMessageKey(kcContext);
-    if (!key) return { ok: false, key: "" };
-
-    return { ok: REGISTRATION_SUCCESS_KEYS.has(key), key };
-}
-
-async function sendRegistrationCompletedEvent(customerPortalId: string): Promise<void> {
-    const apiBase = getCustomerPortalApiBase();
-    if (!apiBase) {
-        console.warn("[CP] missing VITE_CUSTOMER_PORTAL_API_BASE – cannot send registration-completed");
-        return;
-    }
-
-    const endpoint = `${apiBase}/${customerPortalId}/events/registration-completed`;
-
-    try {
-        const res = await fetch(endpoint, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({}),
-            keepalive: true,
-        });
-
-        if (!res.ok) {
-            const txt = await res.text().catch(() => "");
-            console.warn("[CP] registration-completed failed:", res.status, txt);
-            return;
-        }
-
-        console.log("[CP] registration-completed sent successfully");
-    } catch (err) {
-        console.warn("[CP] registration-completed request error:", err);
-    }
 }
 
 export default function Login(
@@ -169,9 +52,6 @@ export default function Login(
 
     const isCustomerPortalLogin = clientIdFromQuery.endsWith("-cp-login");
 
-    const canShowReset = isCustomerPortalLogin && !!url.loginResetCredentialsUrl;
-    const canShowRegister = isCustomerPortalLogin && !!url.registrationUrl;
-
     const { t } = useTranslation();
     const [language, setLanguage] = useState(i18n.language || "en");
     const [isLoginButtonDisabled, setIsLoginButtonDisabled] = useState(false);
@@ -179,9 +59,23 @@ export default function Login(
 
     const { config } = useWhiteLabel();
 
-    // event should not depend on whitelabel fetch status
-    const customerPortalIdFromUrl =
-        typeof window !== "undefined" ? readCustomerPortalIdFromUrl() : undefined;
+    const customerPortalIdFromUrl = useMemo(() => {
+        if (typeof window === "undefined") return undefined;
+        return readCustomerPortalIdFromUrl();
+    }, []);
+
+    const resetUrl = useMemo(
+        () => withCustomerPortalId(url.loginResetCredentialsUrl, customerPortalIdFromUrl),
+        [url.loginResetCredentialsUrl, customerPortalIdFromUrl]
+    );
+
+    const registrationUrl = useMemo(
+        () => withCustomerPortalId(url.registrationUrl, customerPortalIdFromUrl),
+        [url.registrationUrl, customerPortalIdFromUrl]
+    );
+
+    const canShowReset = isCustomerPortalLogin && !!url.loginResetCredentialsUrl;
+    const canShowRegister = isCustomerPortalLogin && !!url.registrationUrl;
 
     useEffect(() => {
         document.title = "Sapioo - Sign In";
@@ -191,15 +85,15 @@ export default function Login(
         if (!customerPortalIdFromUrl) return;
         if (!isCustomerPortalLogin) return;
 
-        const { ok, key } = isRegistrationCompletedByKey(kcContext as any);
+        const { ok, key } = isRegistrationCompleted(kcContext as any);
 
         if (!ok) {
             const msg = (kcContext as any)?.message;
             if (normalizeKey(msg?.type) === "success") {
-                console.warn("[CP] success message detected but key is not whitelisted → event NOT sent", {
-                    receivedKey: key,
-                    message: msg,
-                });
+                console.warn(
+                    "[CP] success message detected but not recognized as registration completion → event NOT sent",
+                    { receivedKey: key, message: msg }
+                );
             }
             return;
         }
@@ -208,7 +102,7 @@ export default function Login(
         if (sessionStorage.getItem(guardKey) === "1") return;
 
         sessionStorage.setItem(guardKey, "1");
-        console.log("[CP] registration success key matched → sending registration-completed", {
+        console.log("[CP] registration completed → sending registration-completed", {
             customerPortalId: customerPortalIdFromUrl,
             key,
         });
@@ -237,66 +131,56 @@ export default function Login(
                     displayInfo={false}
                     socialProvidersNode={
                         <>
-                            {realm.password &&
-                                social?.providers &&
-                                social.providers.length !== 0 && (
-                                    <div
-                                        id="kc-social-providers"
-                                        className={kcClsx("kcFormSocialAccountSectionClass")}
+                            {realm.password && social?.providers && social.providers.length !== 0 && (
+                                <div
+                                    id="kc-social-providers"
+                                    className={kcClsx("kcFormSocialAccountSectionClass")}
+                                >
+                                    <hr />
+                                    <h2>{t("identity-provider-login-label")}</h2>
+                                    <ul
+                                        className={kcClsx(
+                                            "kcFormSocialAccountListClass",
+                                            social.providers.length > 3 && "kcFormSocialAccountListGridClass"
+                                        )}
                                     >
-                                        <hr />
-                                        <h2>{t("identity-provider-login-label")}</h2>
-                                        <ul
-                                            className={kcClsx(
-                                                "kcFormSocialAccountListClass",
-                                                social.providers.length > 3 &&
-                                                "kcFormSocialAccountListGridClass"
-                                            )}
-                                        >
-                                            {social.providers.map((...[p, , providers]) => (
-                                                <li key={p.alias}>
-                                                    <a
-                                                        id={`social-${p.alias}`}
-                                                        className={kcClsx(
-                                                            "kcFormSocialAccountListButtonClass",
-                                                            providers.length > 3 &&
-                                                            "kcFormSocialAccountGridItem"
+                                        {social.providers.map((...[p, , providers]) => (
+                                            <li key={p.alias}>
+                                                <a
+                                                    id={`social-${p.alias}`}
+                                                    className={kcClsx(
+                                                        "kcFormSocialAccountListButtonClass",
+                                                        providers.length > 3 && "kcFormSocialAccountGridItem"
+                                                    )}
+                                                    type="button"
+                                                    href={p.loginUrl}
+                                                >
+                                                    {p.iconClasses && (
+                                                        <i
+                                                            className={clsx(kcClsx("kcCommonLogoIdP"), p.iconClasses)}
+                                                            aria-hidden="true"
+                                                        ></i>
+                                                    )}
+                                                    <span
+                                                        className={clsx(
+                                                            kcClsx("kcFormSocialAccountNameClass"),
+                                                            p.iconClasses && "kc-social-icon-text"
                                                         )}
-                                                        type="button"
-                                                        href={p.loginUrl}
-                                                    >
-                                                        {p.iconClasses && (
-                                                            <i
-                                                                className={clsx(
-                                                                    kcClsx("kcCommonLogoIdP"),
-                                                                    p.iconClasses
-                                                                )}
-                                                                aria-hidden="true"
-                                                            ></i>
-                                                        )}
-                                                        <span
-                                                            className={clsx(
-                                                                kcClsx("kcFormSocialAccountNameClass"),
-                                                                p.iconClasses && "kc-social-icon-text"
-                                                            )}
-                                                            dangerouslySetInnerHTML={{
-                                                                __html: kcSanitize(p.displayName),
-                                                            }}
-                                                        />
-                                                    </a>
-                                                </li>
-                                            ))}
-                                        </ul>
-                                    </div>
-                                )}
+                                                        dangerouslySetInnerHTML={{
+                                                            __html: kcSanitize(p.displayName),
+                                                        }}
+                                                    />
+                                                </a>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            )}
                         </>
                     }
                 >
                     <div id="kc-form" style={{ display: "flex", justifyContent: "center" }}>
-                        <div
-                            id="kc-form-wrapper"
-                            style={{ width: "100%", maxWidth: 600, padding: "0 20px" }}
-                        >
+                        <div id="kc-form-wrapper" style={{ width: "100%", maxWidth: 600, padding: "0 20px" }}>
                             {realm.password && (
                                 <form
                                     id="kc-form-login"
@@ -310,22 +194,19 @@ export default function Login(
                                 >
                                     {!usernameHidden && (
                                         <div className={kcClsx("kcFormGroupClass")}>
-                                            <span style={{ fontSize: 20 }}>
-                                                {!realm.loginWithEmailAllowed
-                                                    ? t("username")
-                                                    : !realm.registrationEmailAsUsername
-                                                        ? t("usernameOrEmail")
-                                                        : t("email")}
-                                            </span>
+                      <span style={{ fontSize: 20 }}>
+                        {!realm.loginWithEmailAllowed
+                            ? t("username")
+                            : !realm.registrationEmailAsUsername
+                                ? t("usernameOrEmail")
+                                : t("email")}
+                      </span>
 
                                             <div style={{ display: "flex", justifyContent: "center" }}>
                                                 <TextField
                                                     sx={{
                                                         width: "clamp(300px, 60vw, 600px)",
-                                                        "& .MuiOutlinedInput-root": {
-                                                            borderRadius: 25,
-                                                            height: 45,
-                                                        },
+                                                        "& .MuiOutlinedInput-root": { borderRadius: 25, height: 45 },
                                                     }}
                                                     label=""
                                                     variant="outlined"
@@ -342,10 +223,7 @@ export default function Login(
                                                                 aria-live="polite"
                                                                 dangerouslySetInnerHTML={{
                                                                     __html: kcSanitize(
-                                                                        messagesPerField.getFirstError(
-                                                                            "username",
-                                                                            "password"
-                                                                        )
+                                                                        messagesPerField.getFirstError("username", "password")
                                                                     ),
                                                                 }}
                                                             />
@@ -361,10 +239,7 @@ export default function Login(
                                             <FormControl
                                                 sx={{
                                                     width: "clamp(300px, 60vw, 600px)",
-                                                    "& .MuiOutlinedInput-root": {
-                                                        borderRadius: 25,
-                                                        height: 45,
-                                                    },
+                                                    "& .MuiOutlinedInput-root": { borderRadius: 25, height: 45 },
                                                 }}
                                                 variant="outlined"
                                                 error={messagesPerField.existsError("username", "password")}
@@ -381,9 +256,7 @@ export default function Login(
                                                         <InputAdornment position="end">
                                                             <IconButton
                                                                 aria-label={
-                                                                    showPassword
-                                                                        ? "hide the password"
-                                                                        : "display the password"
+                                                                    showPassword ? "hide the password" : "display the password"
                                                                 }
                                                                 onClick={() => setShowPassword(!showPassword)}
                                                                 onMouseDown={(e) => e.preventDefault()}
@@ -396,23 +269,19 @@ export default function Login(
                                                     label=""
                                                 />
 
-                                                {usernameHidden &&
-                                                    messagesPerField.existsError("username", "password") && (
-                                                        <FormHelperText>
-                                                            <span
-                                                                style={{ color: "#d32f2f" }}
-                                                                aria-live="polite"
-                                                                dangerouslySetInnerHTML={{
-                                                                    __html: kcSanitize(
-                                                                        messagesPerField.getFirstError(
-                                                                            "username",
-                                                                            "password"
-                                                                        )
-                                                                    ),
-                                                                }}
-                                                            />
-                                                        </FormHelperText>
-                                                    )}
+                                                {usernameHidden && messagesPerField.existsError("username", "password") && (
+                                                    <FormHelperText>
+                            <span
+                                style={{ color: "#d32f2f" }}
+                                aria-live="polite"
+                                dangerouslySetInnerHTML={{
+                                    __html: kcSanitize(
+                                        messagesPerField.getFirstError("username", "password")
+                                    ),
+                                }}
+                            />
+                                                    </FormHelperText>
+                                                )}
                                             </FormControl>
                                         </div>
                                     </div>
@@ -446,7 +315,7 @@ export default function Login(
                                                         fontWeight: 600,
                                                     }}
                                                     tabIndex={6}
-                                                    href={url.loginResetCredentialsUrl}
+                                                    href={resetUrl} // ✅ keeps customerPortalId
                                                 >
                                                     {t("forgotPassword")}
                                                 </Link>
@@ -461,7 +330,7 @@ export default function Login(
                                                         fontWeight: 600,
                                                     }}
                                                     tabIndex={7}
-                                                    href={url.registrationUrl}
+                                                    href={registrationUrl} // ✅ keeps customerPortalId
                                                 >
                                                     {t("createAccount")}
                                                 </Link>
