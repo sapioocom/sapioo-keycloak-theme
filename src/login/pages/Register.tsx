@@ -36,7 +36,6 @@ export default function Register(
     const { kcContext, i18n: i18nProps, doUseDefaultCss, Template, classes } = props;
     const { kcClsx } = getKcClsx({ doUseDefaultCss, classes });
 
-    // NOTE: Keycloakify/KC versions differ; keep it resilient.
     const { url, messagesPerField } = kcContext as any;
     const profile = (kcContext as any).profile;
 
@@ -73,12 +72,6 @@ export default function Register(
                 { name: "email", required: true },
                 { name: "firstName", required: true },
                 { name: "lastName", required: true },
-
-                { name: "sapioo_account_id", required: false },
-                { name: "sapioo_domain", required: false },
-                { name: "sapioo_role", required: false },
-                { name: "sapioo_role_id", required: false },
-                { name: "sapioo_timezone", required: false }
             ];
         }
 
@@ -105,18 +98,6 @@ export default function Register(
                 return "registerFirstName";
             case "lastName":
                 return "registerLastName";
-
-            case "sapioo_account_id":
-                return "sapiooAccountId";
-            case "sapioo_domain":
-                return "sapiooDomain";
-            case "sapioo_role":
-                return "sapiooRole";
-            case "sapioo_role_id":
-                return "sapiooRoleId";
-            case "sapioo_timezone":
-                return "sapiooTimezone";
-
             default:
                 return "";
         }
@@ -137,7 +118,7 @@ export default function Register(
                 style={{ color: "#d32f2f" }}
                 aria-live="polite"
                 dangerouslySetInnerHTML={{
-                    __html: kcSanitize(messagesPerField.getFirstError(name))
+                    __html: kcSanitize(messagesPerField.getFirstError(name)),
                 }}
             />
         );
@@ -162,13 +143,10 @@ export default function Register(
                         style={{
                             display: "flex",
                             justifyContent: "center",
-                            paddingBottom: 120
+                            paddingBottom: 120,
                         }}
                     >
-                        <div
-                            id="kc-form-wrapper"
-                            style={{ width: "100%", maxWidth: 600, padding: "0 20px" }}
-                        >
+                        <div id="kc-form-wrapper" style={{ width: "100%", maxWidth: 600, padding: "0 20px" }}>
                             <form
                                 id="kc-register-form"
                                 action={formAction}
@@ -183,7 +161,6 @@ export default function Register(
                                     const name = a.name;
                                     const label = getFieldLabel(a);
 
-                                    // Password
                                     if (isPasswordField(name)) {
                                         const hasErr = messagesPerField?.existsError?.(name);
 
@@ -197,8 +174,8 @@ export default function Register(
                                                             width: "clamp(300px, 60vw, 600px)",
                                                             "& .MuiOutlinedInput-root": {
                                                                 borderRadius: 25,
-                                                                height: 45
-                                                            }
+                                                                height: 45,
+                                                            },
                                                         }}
                                                         variant="outlined"
                                                         error={!!hasErr}
@@ -209,11 +186,7 @@ export default function Register(
                                                             endAdornment={
                                                                 <InputAdornment position="end">
                                                                     <IconButton
-                                                                        aria-label={
-                                                                            showPassword
-                                                                                ? t("hidePasswordAria")
-                                                                                : t("showPasswordAria")
-                                                                        }
+                                                                        aria-label={showPassword ? t("hidePasswordAria") : t("showPasswordAria")}
                                                                         onClick={() => setShowPassword(!showPassword)}
                                                                         onMouseDown={(e) => e.preventDefault()}
                                                                         edge="end"
@@ -223,16 +196,13 @@ export default function Register(
                                                                 </InputAdornment>
                                                             }
                                                         />
-                                                        {hasErr && (
-                                                            <FormHelperText>{renderHelperError(name)}</FormHelperText>
-                                                        )}
+                                                        {hasErr && <FormHelperText>{renderHelperError(name)}</FormHelperText>}
                                                     </FormControl>
                                                 </div>
                                             </div>
                                         );
                                     }
 
-                                    // Confirm password
                                     if (isPasswordConfirmField(name)) {
                                         const hasErr = messagesPerField?.existsError?.(name);
 
@@ -246,8 +216,8 @@ export default function Register(
                                                             width: "clamp(300px, 60vw, 600px)",
                                                             "& .MuiOutlinedInput-root": {
                                                                 borderRadius: 25,
-                                                                height: 45
-                                                            }
+                                                                height: 45,
+                                                            },
                                                         }}
                                                         variant="outlined"
                                                         error={!!hasErr}
@@ -259,35 +229,24 @@ export default function Register(
                                                                 <InputAdornment position="end">
                                                                     <IconButton
                                                                         aria-label={
-                                                                            showPasswordConfirm
-                                                                                ? t("hidePasswordAria")
-                                                                                : t("showPasswordAria")
+                                                                            showPasswordConfirm ? t("hidePasswordAria") : t("showPasswordAria")
                                                                         }
-                                                                        onClick={() =>
-                                                                            setShowPasswordConfirm(!showPasswordConfirm)
-                                                                        }
+                                                                        onClick={() => setShowPasswordConfirm(!showPasswordConfirm)}
                                                                         onMouseDown={(e) => e.preventDefault()}
                                                                         edge="end"
                                                                     >
-                                                                        {showPasswordConfirm ? (
-                                                                            <VisibilityOff />
-                                                                        ) : (
-                                                                            <Visibility />
-                                                                        )}
+                                                                        {showPasswordConfirm ? <VisibilityOff /> : <Visibility />}
                                                                     </IconButton>
                                                                 </InputAdornment>
                                                             }
                                                         />
-                                                        {hasErr && (
-                                                            <FormHelperText>{renderHelperError(name)}</FormHelperText>
-                                                        )}
+                                                        {hasErr && <FormHelperText>{renderHelperError(name)}</FormHelperText>}
                                                     </FormControl>
                                                 </div>
                                             </div>
                                         );
                                     }
 
-                                    // Regular text fields
                                     const hasErr = messagesPerField?.existsError?.(name);
                                     const defaultValue = (a as any).value ?? "";
 
@@ -301,8 +260,8 @@ export default function Register(
                                                         width: "clamp(300px, 60vw, 600px)",
                                                         "& .MuiOutlinedInput-root": {
                                                             borderRadius: 25,
-                                                            height: 45
-                                                        }
+                                                            height: 45,
+                                                        },
                                                     }}
                                                     label=""
                                                     variant="outlined"
@@ -324,7 +283,7 @@ export default function Register(
                                         display: "flex",
                                         justifyContent: "space-between",
                                         alignItems: "center",
-                                        gap: 16
+                                        gap: 16,
                                     }}
                                 >
                                     <Link sx={{ fontWeight: 600 }} href={url.loginUrl}>
@@ -338,7 +297,7 @@ export default function Register(
                                     style={{
                                         display: "flex",
                                         justifyContent: "center",
-                                        alignItems: "center"
+                                        alignItems: "center",
                                     }}
                                 >
                                     <Button
@@ -354,8 +313,8 @@ export default function Register(
                                             fontWeight: 700,
                                             "&:hover": {
                                                 filter: "brightness(0.95)",
-                                                boxShadow: "none"
-                                            }
+                                                boxShadow: "none",
+                                            },
                                         }}
                                     >
                                         {t("registerButton")}

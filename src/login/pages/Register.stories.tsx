@@ -5,25 +5,20 @@ const { KcPageStory } = createKcPageStory({ pageId: "register.ftl" });
 
 const meta = {
     title: "login/register.ftl",
-    component: KcPageStory
+    component: KcPageStory,
 } satisfies Meta<typeof KcPageStory>;
 
 export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-const FULL_PROFILE_ATTRIBUTES = [
+const STANDARD_PROFILE_ATTRIBUTES = [
     { name: "username", required: true, displayName: "Username" },
     { name: "password", required: true, displayName: "Password" },
     { name: "password-confirm", required: true, displayName: "Confirm password" },
     { name: "email", required: true, displayName: "Email" },
     { name: "firstName", required: true, displayName: "First name" },
     { name: "lastName", required: true, displayName: "Last name" },
-    { name: "sapioo_account_id", required: false, displayName: "sapioo_account_id" },
-    { name: "sapioo_domain", required: false, displayName: "sapioo_domain" },
-    { name: "sapioo_role", required: false, displayName: "sapioo_role" },
-    { name: "sapioo_role_id", required: false, displayName: "sapioo_role_id" },
-    { name: "sapioo_timezone", required: false, displayName: "sapioo_timezone" }
 ];
 
 export const Default: Story = {
@@ -31,11 +26,11 @@ export const Default: Story = {
         <KcPageStory
             kcContext={
                 {
-                    profile: { attributes: FULL_PROFILE_ATTRIBUTES }
+                    profile: { attributes: STANDARD_PROFILE_ATTRIBUTES },
                 } as any
             }
         />
-    )
+    ),
 };
 
 export const WithEmailAsUsername: Story = {
@@ -45,13 +40,13 @@ export const WithEmailAsUsername: Story = {
                 {
                     realm: {
                         loginWithEmailAllowed: true,
-                        registrationEmailAsUsername: true
+                        registrationEmailAsUsername: true,
                     },
-                    profile: { attributes: FULL_PROFILE_ATTRIBUTES }
+                    profile: { attributes: STANDARD_PROFILE_ATTRIBUTES },
                 } as any
             }
         />
-    )
+    ),
 };
 
 export const WithFieldErrors: Story = {
@@ -61,10 +56,10 @@ export const WithFieldErrors: Story = {
                 {
                     url: {
                         registrationAction: "/mock-registration-action",
-                        loginUrl: "/mock-login-url"
+                        loginUrl: "/mock-login-url",
                     },
                     realm: { registrationEmailAsUsername: false },
-                    profile: { attributes: FULL_PROFILE_ATTRIBUTES },
+                    profile: { attributes: STANDARD_PROFILE_ATTRIBUTES },
                     messagesPerField: {
                         existsError: (field: string) =>
                             ["username", "email", "password", "password-confirm"].includes(field),
@@ -81,10 +76,10 @@ export const WithFieldErrors: Story = {
                                 default:
                                     return "Invalid field";
                             }
-                        }
-                    }
+                        },
+                    },
                 } as any
             }
         />
-    )
+    ),
 };
