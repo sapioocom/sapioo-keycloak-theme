@@ -80,6 +80,11 @@ function getCustomerPortalApiBase(): string | undefined {
     return base.replace(/\/+$/, "");
 }
 
+function isCustomerPortalId(value: string): boolean {
+    if (isUuid(value)) return true;
+    return /^[a-f0-9]{24}$/i.test(value);
+}
+
 export const WhiteLabelProvider: React.FC<React.PropsWithChildren<{}>> = ({ children }) => {
     const [state, setState] = useState<WhiteLabelState>({ status: "idle", config: null });
     const customerPortalId = useMemo(readCustomerPortalIdFromUrl, []);
@@ -91,7 +96,8 @@ export const WhiteLabelProvider: React.FC<React.PropsWithChildren<{}>> = ({ chil
             console.log("[CP] no customerPortalId in URL – using defaults");
             return;
         }
-        if (!isUuid(customerPortalId)) {
+
+        if (!isCustomerPortalId(customerPortalId)) {
             console.warn("[CP] invalid customerPortalId format:", customerPortalId);
             return;
         }
