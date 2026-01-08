@@ -13,12 +13,11 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 const STANDARD_PROFILE_ATTRIBUTES = [
-    { name: "username", required: true, displayName: "Username" },
+    { name: "firstName", required: true, displayName: "First name" },
+    { name: "lastName", required: true, displayName: "Last name" },
     { name: "password", required: true, displayName: "Password" },
     { name: "password-confirm", required: true, displayName: "Confirm password" },
     { name: "email", required: true, displayName: "Email" },
-    { name: "firstName", required: true, displayName: "First name" },
-    { name: "lastName", required: true, displayName: "Last name" },
 ];
 
 export const Default: Story = {
@@ -62,11 +61,13 @@ export const WithFieldErrors: Story = {
                     profile: { attributes: STANDARD_PROFILE_ATTRIBUTES },
                     messagesPerField: {
                         existsError: (field: string) =>
-                            ["username", "email", "password", "password-confirm"].includes(field),
+                            ["firstName", "lastName", "email", "password", "password-confirm"].includes(field),
                         getFirstError: (field: string) => {
                             switch (field) {
-                                case "username":
-                                    return "Username is already taken";
+                                case "firstName":
+                                    return "First name is required";
+                                case "lastName":
+                                    return "Last name is required";
                                 case "email":
                                     return "Invalid email format";
                                 case "password":

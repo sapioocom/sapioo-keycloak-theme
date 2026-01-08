@@ -30,6 +30,9 @@ type ProfileAttr = {
     readOnly?: boolean;
 };
 
+const FIELD_ORDER = ["firstName", "lastName", "password", "password-confirm", "email"] as const;
+type FieldName = (typeof FIELD_ORDER)[number];
+
 export default function Register(
     props: PageProps<Extract<KcContext, { pageId: "register.ftl" }>, I18n>
 ) {
@@ -61,31 +64,12 @@ export default function Register(
 
     const formAction = (url as any).registrationAction ?? url.loginAction;
 
-    const attributes: ProfileAttr[] = useMemo(() => {
-        const attrs = (profile?.attributes ?? []) as ProfileAttr[];
-
-        if (!Array.isArray(attrs) || attrs.length === 0) {
-            return [
-                { name: "username", required: true },
-                { name: "password", required: true },
-                { name: "password-confirm", required: true },
-                { name: "email", required: true },
-                { name: "firstName", required: true },
-                { name: "lastName", required: true },
-            ];
-        }
-
-        return attrs;
-    }, [profile]);
-
     const isPasswordField = (name: string) => name === "password";
     const isPasswordConfirmField = (name: string) =>
         name === "password-confirm" || name === "passwordConfirm" || name === "confirmPassword";
 
     const getLabelKeyByAttrName = (name: string) => {
         switch (name) {
-            case "username":
-                return "registerUsername";
             case "password":
                 return "registerPassword";
             case "password-confirm":
@@ -124,6 +108,28 @@ export default function Register(
         );
     };
 
+    const makeAttr = (name: FieldName, sourceAttrs: ProfileAttr[]) => {
+        const fromProfile =
+            sourceAttrs.find((a) => a.name === name) ??
+            (name === "password-confirm"
+                ? sourceAttrs.find((a) => isPasswordConfirmField(a.name))
+                : undefined);
+
+        return {
+            required: true,
+            ...(fromProfile ?? {}),
+            name,
+        } as ProfileAttr;
+    };
+
+
+    const attributes: ProfileAttr[] = useMemo(() => {
+        const attrs = (profile?.attributes ?? []) as ProfileAttr[];
+        const safeAttrs = Array.isArray(attrs) ? attrs : [];
+
+        return FIELD_ORDER.map((name) => makeAttr(name, safeAttrs));
+    }, [profile]);
+
     return (
         <>
             <Header language={language} setLanguage={setLanguage} />
@@ -146,7 +152,10 @@ export default function Register(
                             paddingBottom: 120,
                         }}
                     >
-                        <div id="kc-form-wrapper" style={{ width: "100%", maxWidth: 600, padding: "0 20px" }}>
+                        <div
+                            id="kc-form-wrapper"
+                            style={{ width: "100%", maxWidth: 600, padding: "0 20px" }}
+                        >
                             <form
                                 id="kc-register-form"
                                 action={formAction}
@@ -186,7 +195,11 @@ export default function Register(
                                                             endAdornment={
                                                                 <InputAdornment position="end">
                                                                     <IconButton
-                                                                        aria-label={showPassword ? t("hidePasswordAria") : t("showPasswordAria")}
+                                                                        aria-label={
+                                                                            showPassword
+                                                                                ? t("hidePasswordAria")
+                                                                                : t("showPasswordAria")
+                                                                        }
                                                                         onClick={() => setShowPassword(!showPassword)}
                                                                         onMouseDown={(e) => e.preventDefault()}
                                                                         edge="end"
@@ -196,7 +209,9 @@ export default function Register(
                                                                 </InputAdornment>
                                                             }
                                                         />
-                                                        {hasErr && <FormHelperText>{renderHelperError(name)}</FormHelperText>}
+                                                        {hasErr && (
+                                                            <FormHelperText>{renderHelperError(name)}</FormHelperText>
+                                                        )}
                                                     </FormControl>
                                                 </div>
                                             </div>
@@ -229,18 +244,28 @@ export default function Register(
                                                                 <InputAdornment position="end">
                                                                     <IconButton
                                                                         aria-label={
-                                                                            showPasswordConfirm ? t("hidePasswordAria") : t("showPasswordAria")
+                                                                            showPasswordConfirm
+                                                                                ? t("hidePasswordAria")
+                                                                                : t("showPasswordAria")
                                                                         }
-                                                                        onClick={() => setShowPasswordConfirm(!showPasswordConfirm)}
+                                                                        onClick={() =>
+                                                                            setShowPasswordConfirm(!showPasswordConfirm)
+                                                                        }
                                                                         onMouseDown={(e) => e.preventDefault()}
                                                                         edge="end"
                                                                     >
-                                                                        {showPasswordConfirm ? <VisibilityOff /> : <Visibility />}
+                                                                        {showPasswordConfirm ? (
+                                                                            <VisibilityOff />
+                                                                        ) : (
+                                                                            <Visibility />
+                                                                        )}
                                                                     </IconButton>
                                                                 </InputAdornment>
                                                             }
                                                         />
-                                                        {hasErr && <FormHelperText>{renderHelperError(name)}</FormHelperText>}
+                                                        {hasErr && (
+                                                            <FormHelperText>{renderHelperError(name)}</FormHelperText>
+                                                        )}
                                                     </FormControl>
                                                 </div>
                                             </div>
