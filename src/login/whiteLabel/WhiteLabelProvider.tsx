@@ -21,6 +21,74 @@ function setCssVars(cfg?: WhiteLabelConfig | null) {
     if (cfg.secondaryColor) root.setProperty("--wl-secondary", cfg.secondaryColor);
 }
 
+function getCustomerPortalApiBase(): string | undefined {
+    const base = import.meta.env.VITE_CUSTOMER_PORTAL_API_BASE as string | undefined;
+    if (!base) return undefined;
+    return base.replace(/\/+$/, "");
+}
+
+function isCustomerPortalId(value: string): boolean {
+    if (isUuid(value)) return true;
+    return /^[a-f0-9]{24}$/i.test(value);
+}
+
+function base64UrlDecodeToString(input: string): string | null {
+    try {
+        const pad = "=".repeat((4 - (input.length % 4)) % 4);
+        const b64 = (input + pad).replace(/-/g, "+").replace(/_/g, "/");
+        const decoded = atob(b64);
+
+        // handle utf-8
+        try {
+            return decodeURIComponent(
+                decoded
+                    .split("")
+                    .map((c) => "%" + c.charCodeAt(0).toString(16).padStart(2, "0"))
+                    .join("")
+            );
+        } catch {
+            return decoded;
+        }
+    } catch {
+        return null;
+    }
+}
+
+function extractIdFromUrlString(urlStr: string): string | undefined {
+    const candidates = [
+        "customerPortalId",
+        "customer_portal_id",
+        "cp",
+        // legacy fallbacks:
+        "whiteLabelId",
+        "whitelabelId",
+        "white_label_id",
+        "wl",
+    ];
+
+    try {
+        const u = new URL(urlStr);
+
+        const qp = new URLSearchParams(u.search);
+        for (const k of candidates) {
+            const v = qp.get(k);
+            if (v) return v;
+        }
+
+        if (u.hash) {
+            const hp = new URLSearchParams(u.hash.slice(1));
+            for (const k of candidates) {
+                const v = hp.get(k);
+                if (v) return v;
+            }
+        }
+    } catch {
+        // ignore
+    }
+
+    return undefined;
+}
+
 function readCustomerPortalIdFromUrl(): string | undefined {
     const candidates = [
         "customerPortalId",
@@ -34,35 +102,52 @@ function readCustomerPortalIdFromUrl(): string | undefined {
     ];
 
     const topParams = new URLSearchParams(window.location.search);
+
+    // 1) direct params
     for (const k of candidates) {
         const v = topParams.get(k);
         if (v) return v;
     }
 
+    // 2) redirect_uri param (login page has it)
     const redirectRaw = topParams.get("redirect_uri");
     if (redirectRaw) {
         try {
             const decoded = decodeURIComponent(redirectRaw);
-            const redirectUrl = new URL(decoded);
-
-            const innerParams = new URLSearchParams(redirectUrl.search);
-            for (const k of candidates) {
-                const v = innerParams.get(k);
-                if (v) return v;
-            }
-
-            if (redirectUrl.hash) {
-                const hashParams = new URLSearchParams(redirectUrl.hash.slice(1));
-                for (const k of candidates) {
-                    const v = hashParams.get(k);
-                    if (v) return v;
-                }
-            }
+            const fromRedirect = extractIdFromUrlString(decoded);
+            if (fromRedirect) return fromRedirect;
         } catch {
-            /* ignore malformed redirect_uri */
+            /* ignore */
         }
     }
 
+    // 3) client_data param (registration page has it)
+    const clientDataRaw = topParams.get("client_data");
+    if (clientDataRaw) {
+        const jsonStr = base64UrlDecodeToString(clientDataRaw);
+        if (jsonStr) {
+            try {
+                const obj = JSON.parse(jsonStr) as any;
+
+                // Keycloak puts redirect uri inside `ru` (your sample confirms this)
+                const ru = String(obj?.ru ?? "").trim();
+                if (ru) {
+                    const fromRu = extractIdFromUrlString(ru);
+                    if (fromRu) return fromRu;
+                }
+
+                // extra fallback (just in case)
+                for (const k of candidates) {
+                    const v = obj?.[k];
+                    if (typeof v === "string" && v.trim()) return v.trim();
+                }
+            } catch {
+                /* ignore */
+            }
+        }
+    }
+
+    // 4) hash params
     if (window.location.hash) {
         const hashParams = new URLSearchParams(window.location.hash.slice(1));
         for (const k of candidates) {
@@ -72,17 +157,6 @@ function readCustomerPortalIdFromUrl(): string | undefined {
     }
 
     return undefined;
-}
-
-function getCustomerPortalApiBase(): string | undefined {
-    const base = import.meta.env.VITE_CUSTOMER_PORTAL_API_BASE as string | undefined;
-    if (!base) return undefined;
-    return base.replace(/\/+$/, "");
-}
-
-function isCustomerPortalId(value: string): boolean {
-    if (isUuid(value)) return true;
-    return /^[a-f0-9]{24}$/i.test(value);
 }
 
 export const WhiteLabelProvider: React.FC<React.PropsWithChildren<{}>> = ({ children }) => {
